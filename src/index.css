@@ -4,3 +4,29 @@
   margin: 0;
   padding: 0;
 }
+/* ========================================= */
+/* --- ESTILOS DA TELA DE TOKEN --- */
+/* ========================================= */
+
+.linha-token {
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Espaço entre os quadradinhos */
+}
+
+.input-token {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #000;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+  outline: none;
+  transition: 0.2s;
+}
+
+/* Quando o usuário clica no quadradinho, a borda fica vermelha */
+.input-token:focus {
+  border-color: #ff3333;
+}

@@ -12,7 +12,7 @@ function App() {
     <div className={(telaAtual === 'dashboard' || telaAtual === 'pedidos') ? 'fundo-branco' : 'container-geral'}>
       
       {/* ========================================== */}
-      {/* CABEÇALHO ANTIGO (Home e Cadastros) */}
+      {/* CABEÇALHO (Home, Cadastros, Login, Token) */}
       {/* ========================================== */}
       {(telaAtual !== 'dashboard' && telaAtual !== 'pedidos') && (
         <header className="cabecalho">
@@ -23,14 +23,15 @@ function App() {
             <a href="#">Sorvetes</a>
           </nav>
           <div className="botoes-acesso">
-            <button className="btn-criar" onClick={() => setTelaAtual('cadastro')}>Criar conta</button>
+            {/* PASSO 1: Botão vai direto para o cadastro de usuário */}
+            <button className="btn-criar" onClick={() => setTelaAtual('cadastro-usuario')}>Criar conta</button>
             <button className="btn-entrar" onClick={() => setTelaAtual('login')}>ENTRAR</button>
           </div>
         </header>
       )}
 
       {/* ========================================== */}
-      {/* TELAS DESLOGADAS */}
+      {/* HOME ORIGINAL */}
       {/* ========================================== */}
       {telaAtual === 'home' && (
         <>
@@ -61,19 +62,9 @@ function App() {
         </>
       )}
 
-      {telaAtual === 'cadastro' && (
-        <main className="tela-cadastro">
-           <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-           <div className="caixa-escolha">
-             <h2>voce deseja ser?</h2>
-             <div className="botoes-escolha">
-               <button className="btn-vermelho" onClick={() => setTelaAtual('cadastro-vendedor')}>VENDEDOR</button>
-               <button className="btn-vermelho" onClick={() => setTelaAtual('cadastro-usuario')}>USUARIO</button>
-             </div>
-           </div>
-        </main>
-      )}
-
+      {/* ========================================== */}
+      {/* CADASTRO DE USUÁRIO (Sem Senha) */}
+      {/* ========================================== */}
       {telaAtual === 'cadastro-usuario' && (
         <main className="tela-cadastro">
           <img src={imgLogo} alt="Fundo" className="logo-fundo" />
@@ -91,12 +82,12 @@ function App() {
                 <div className="grupo-input w-50"><label>CPF</label><input type="text" /></div>
                 <div className="grupo-input w-50"><label>Data de nascimento</label><input type="date" /></div>
               </div>
-              <div className="linha-form">
-                <div className="grupo-input w-50"><label>Senha</label><input type="password" /></div>
-                <div className="grupo-input w-50"><label>Confirmar Senha</label><input type="password" /></div>
-              </div>
+              
+              {/* PASSO 2: Linha de senhas foi removida daqui! */}
+              
               <div className="botoes-form">
-                <button type="button" className="btn-cancelar" onClick={() => setTelaAtual('cadastro')}>CANCELAR</button>
+                {/* Agora o cancelar volta para a home, já que apagamos a tela intermediária */}
+                <button type="button" className="btn-cancelar" onClick={() => setTelaAtual('home')}>CANCELAR</button>
                 <button type="button" className="btn-salvar">SALVAR</button>
               </div>
             </form>
@@ -104,49 +95,24 @@ function App() {
         </main>
       )}
 
-      {telaAtual === 'cadastro-vendedor' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario">
-            <h2 className="titulo-form">Vendedor</h2>
-            <form className="formulario">
-              <div className="linha-form">
-                <div className="grupo-input w-70"><label>Nome da empresa</label><input type="text" /></div>
-                <div className="grupo-input w-30"><label>Telefone</label><input type="text" /></div>
-              </div>
-              <div className="linha-form">
-                <div className="grupo-input w-50"><label>Email</label><input type="email" /></div>
-                <div className="grupo-input w-50"><label>Nome Responsável</label><input type="text" /></div>
-              </div>
-              <div className="linha-form">
-                <div className="grupo-input w-50"><label>CNPJ</label><input type="text" /></div>
-                <div className="grupo-input w-50"><label>CPF do responsável</label><input type="text" /></div>
-              </div>
-              <div className="linha-form">
-                <div className="grupo-input w-50"><label>Senha</label><input type="password" /></div>
-                <div className="grupo-input w-50"><label>Confirmar Senha</label><input type="password" /></div>
-              </div>
-              <div className="botoes-form">
-                <button type="button" className="btn-cancelar" onClick={() => setTelaAtual('cadastro')}>CANCELAR</button>
-                <button type="button" className="btn-salvar">SALVAR</button>
-              </div>
-            </form>
-          </div>
-        </main>
-      )}
-
+      {/* ========================================== */}
+      {/* TELA DE LOGIN (Sem senha) */}
+      {/* ========================================== */}
       {telaAtual === 'login' && (
         <main className="tela-cadastro">
           <img src={imgLogo} alt="Fundo" className="logo-fundo" />
           <div className="caixa-formulario" style={{ minHeight: 'auto' }}>
             <form className="formulario">
-              <div className="linha-form">
-                <div className="grupo-input w-70"><label>CPF/CNPJ</label><input type="text" /></div>
-              </div>
               <div className="linha-form" style={{ alignItems: 'flex-end' }}>
-                <div className="grupo-input w-70"><label>Senha</label><input type="password" /></div>
+                <div className="grupo-input w-70">
+                  <label>Email</label>
+                  <input type="text" />
+                </div>
                 <div style={{ flex: '30%', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={() => setTelaAtual('dashboard')}>login</button>
+                  {/* Clicar em continuar leva para a tela de TOKEN */}
+                  <button type="button" className="btn-salvar" style={{ padding: '12px 40px' }} onClick={() => setTelaAtual('token')}>
+                    Continuar
+                  </button>
                 </div>
               </div>
             </form>
@@ -155,23 +121,51 @@ function App() {
       )}
 
       {/* ========================================== */}
-      {/* TELAS LOGADAS (Dashboard e Pedidos) */}
+      {/* PASSO 3: NOVA TELA DE TOKEN */}
+      {/* ========================================== */}
+      {telaAtual === 'token' && (
+        <main className="tela-cadastro">
+          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
+          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
+            
+            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              Token de Autenticação
+            </h2>
+            
+            <div className="linha-token">
+              <input type="text" maxLength="1" className="input-token" />
+              <input type="text" maxLength="1" className="input-token" />
+              <input type="text" maxLength="1" className="input-token" />
+              <input type="text" maxLength="1" className="input-token" />
+              <input type="text" maxLength="1" className="input-token" />
+              <input type="text" maxLength="1" className="input-token" />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={() => setTelaAtual('dashboard')}>
+                Finalizar
+              </button>
+            </div>
+
+          </div>
+        </main>
+      )}
+
+      {/* ========================================== */}
+      {/* TELAS LOGADAS (Dashboard e Pedidos continuam iguais) */}
       {/* ========================================== */}
       {(telaAtual === 'dashboard' || telaAtual === 'pedidos') && (
         <div className="layout-dashboard">
           
-          {/* Menu Lateral Esquerdo */}
           <aside className="menu-lateral">
             <img src={imgLogo} alt="Logo POP!" className="logo-lateral" onClick={() => setTelaAtual('home')} style={{ cursor: 'pointer' }}/>
             <nav className="nav-lateral">
-              {/* Note que os botões mudam de tela quando clicados */}
               <button className={`item-menu ${telaAtual === 'dashboard' ? 'ativo' : ''}`} onClick={() => setTelaAtual('dashboard')}>🏠 Inicio</button>
               <button className={`item-menu ${telaAtual === 'pedidos' ? 'ativo' : ''}`} onClick={() => setTelaAtual('pedidos')}>🧾 Pedidos</button>
             </nav>
             <button className="item-menu menu-conta">👤 Minha conta</button>
           </aside>
 
-          {/* Área Central */}
           <main className="conteudo-dashboard">
             <header className="header-dashboard">
               <div className="caixa-categorias">
@@ -179,11 +173,9 @@ function App() {
                 <a href="#">Sobremesa</a>
                 <a href="#">Sorvetes</a>
               </div>
-              {/* O carrinho agora leva para a tela de pedidos! */}
               <div className="icone-carrinho" onClick={() => setTelaAtual('pedidos')} title="Ver Sacolinha">🛒</div>
             </header>
 
-            {/* --- CONTEÚDO DA DASHBOARD (INÍCIO) --- */}
             {telaAtual === 'dashboard' && (
               <>
                 <section className="secao-ofertas">
@@ -212,7 +204,6 @@ function App() {
                     <button className="btn-seta-carrossel">&gt;</button>
                   </div>
                 </section>
-
                 <section className="secao-lojas-dash">
                   <h3 className="titulo-secao" style={{ color: 'black', textAlign: 'left' }}>Lojas</h3>
                   <p>Aqui entrarão os cards redondos das lojas...</p>
@@ -220,47 +211,30 @@ function App() {
               </>
             )}
 
-            {/* --- CONTEÚDO DA TELA DE PEDIDOS (SACOLINHA) --- */}
             {telaAtual === 'pedidos' && (
               <section className="secao-sacola">
                 <h3 className="titulo-sacola">Sua Sacolinha 🛒</h3>
-                
                 <div className="lista-sacola">
-                  
-                  {/* Item 1 da Sacola */}
                   <div className="card-sacola">
                     <img src={imgBolo} alt="Bolo de Pote" />
                     <p className="nome-produto-sacola">Bolo de pote ninho com nutella</p>
-                    
                     <div className="controles-qtd">
-                      <button>-</button>
-                      <span>1</span>
-                      <button>+</button>
+                      <button>-</button><span>1</span><button>+</button>
                     </div>
-                    
                     <div className="precos-sacola">
-                      <span className="preco-antigo">R$19,90</span>
-                      <span className="preco-novo">R$15,00</span>
+                      <span className="preco-antigo">R$19,90</span><span className="preco-novo">R$15,00</span>
                     </div>
                   </div>
-
-                  {/* Item 2 da Sacola */}
                   <div className="card-sacola">
                     <img src={imgBolo} alt="Bolo de Pote" />
                     <p className="nome-produto-sacola">Bolo de pote ninho com morango</p>
-                    
                     <div className="controles-qtd">
-                      <button>-</button>
-                      <span>1</span>
-                      <button>+</button>
+                      <button>-</button><span>1</span><button>+</button>
                     </div>
-                    
                     <div className="precos-sacola">
-                      <span className="preco-antigo">R$19,90</span>
-                      <span className="preco-novo">R$15,00</span>
+                      <span className="preco-antigo">R$19,90</span><span className="preco-novo">R$15,00</span>
                     </div>
                   </div>
-
                 </div>
               </section>
             )}
