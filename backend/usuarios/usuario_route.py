@@ -1,0 +1,137 @@
+from flask import Blueprint, request, jsonify
+from .usuario_model import Usuario
+from config import db
+from sqlalchemy.exc import IntegrityError
+from .services.email_service import send_email
+from flask_jwt_extended import create_access_token
+from datetime import datetime,timedelta
+import random
+
+def generate_token():
+    return str(random.randint(100000, 999999))
+
+usuario_bp = Blueprint('usuario_routes', __name__, url_prefix='/usuarios')
+
+@usuario_bp.route('/', methods=['POST'])
+def criar_usuario():
+    dados = request.json
+    
+    try:
+        data_nascimento = datetime.strptime(
+            dados.get('data_nascimento'), "%Y-%m-%d"
+        ).date()
+    except:
+        return {"error": "Data inválida. Use o formato AAAA-MM-DD."}, 400
+    
+    novo_usuario = Usuario(
+        nome=dados.get('nome'),
+        cpf=dados.get('cpf'),
+        email=dados.get('email'),
+        telefone=dados.get('telefone'),
+        endereco=dados.get('endereco'),
+        data_nascimento=data_nascimento,
+    )
+    
+    db.session.add(novo_usuario)
+    
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "CPF ou Email já cadastrados."}, 400
+    
+    return novo_usuario.to_dict(), 201
+
+@usuario_bp.route('/', methods=['GET'])
+def listar_usuarios():
+    usuarios = Usuario.query.all()
+    return[usuario.to_dict() for usuario in usuarios], 200
+
+@usuario_bp.route('/<int:id>', methods=['GET'])
+def obter_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    return usuario.to_dict(), 200
+
+@usuario_bp.route('/<int:id>', methods=['PUT'])
+def atualizar_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    dados = request.json
+    
+    if 'nome' in dados:
+        usuario.nome = dados['nome']
+    if 'cpf' in dados:
+        usuario.cpf = dados['cpf']
+    if 'email' in dados:
+        usuario.email = dados['email']
+    if 'telefone' in dados:
+        usuario.telefone = dados['telefone']
+    if 'endereco' in dados:
+        usuario.endereco = dados['endereco']
+    if 'data_nascimento' in dados:
+        usuario.data_nascimento = datetime.strptime(
+            dados['data_nascimento'], "%Y-%m-%d"
+        ).date()
+        
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"error":"Erro ao atualizar usuário."}, 400
+    return usuario.to_dict(), 200
+    
+
+@usuario_bp.route('/<int:id>', methods=['DELETE'])
+def deletar_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    db.session.delete(usuario)
+    db.session.commit()
+    return "", 204
+
+@usuario_bp.route("/login/request", methods=["POST"])
+def request_login():
+    data = request.get_json()
+    email = data.get("email")
+
+    usuario = Usuario.query.filter_by(email=email).first()
+
+    if not usuario:
+        return jsonify({"message": "Usuário não encontrado"}), 404
+
+    token = generate_token()
+
+    usuario.login_token = token
+    usuario.login_token_expiration = datetime.utcnow() + timedelta(minutes=10)
+    db.session.commit()
+
+    send_email(
+        to_email=email,
+        subject="Seu código de login",
+        body=f"Seu código de login é: {token}. Ele expira em 10 minutos."
+    )
+
+    return jsonify({"message": "Token enviado para o email"}), 200
+
+@usuario_bp.route("/login/verify", methods=["POST"])
+def verify_login():
+    data = request.get_json()
+    email = data.get("email")
+    token = data.get("token")
+
+    usuario = Usuario.query.filter_by(email=email).first()
+
+    if not usuario:
+        return jsonify({"message": "Usuário não encontrado"}), 404
+
+    if usuario.login_token != token:
+        return jsonify({"message": "Token inválido"}), 400
+
+    if datetime.utcnow() > usuario.login_token_expiration:
+        return jsonify({"message": "Token expirado"}), 400
+
+    access_token = create_access_token(identity=usuario.id)
+
+    usuario.login_token = None
+    usuario.login_token_expiration = None
+    db.session.commit()
+
+    return jsonify({"access_token": access_token}), 200
