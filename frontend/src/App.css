@@ -1,0 +1,660 @@
+/* --- CONFIGURAÇÕES GERAIS --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+
+.container-geral {
+  background-color: #ffeef4; /* Fundo rosinha claro */
+  min-height: 100vh;
+  width: 100%; /* Isso garante que pegue a tela toda */
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- CABEÇALHO --- */
+.cabecalho {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* Divide em 3 partes exatas */
+  align-items: center;
+  padding: 20px 20px; /* Diminuí de 50px para 20px para a logo grudar mais no canto */
+}
+
+.logo-img {
+  width: 180px; /* Largura controlada */
+  height: auto; /* Altura automática para não bugar o cabeçalho */
+  object-fit: contain;
+}
+
+.menu {
+  display: flex;
+  justify-content: center; /* Crava o menu no centro */
+}
+
+.menu a {
+  text-decoration: none;
+  color: #ff3333;
+  font-weight: bold;
+  margin: 0 20px;
+  font-size: 1.1rem;
+}
+
+.botoes-acesso {
+  display: flex;
+  justify-content: flex-end; /* Empurra os botões lá pro canto direito */
+  gap: 15px;
+}
+
+.btn-criar {
+  background-color: white;
+  color: #ff3333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-entrar {
+  background-color: #ff3333;
+  color: white;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+.conteudo-principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.titulo-central {
+  margin-bottom: 40px;
+  font-size: 1.5rem;
+  color: #222;
+}
+
+.area-cartoes {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+  max-width: 900px;
+  justify-content: center;
+}
+
+.cartao {
+  width: 400px;
+  height: 250px;
+  border-radius: 15px;
+  padding: 20px;
+}
+
+/* --- CARTÃO 1: LOJAS --- */
+.cartao-lojas {
+  background-color: #ffd6ff;
+  display: flex;
+  flex-direction: row; 
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 40px;
+}
+
+.conteudo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cartao h3 {
+  color: #ff4d6d;
+  font-size: 1.5rem;
+}
+
+.btn-opcoes {
+  background-color: #ffb3c6;
+  color: #ff4d6d;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 30px;
+  
+  /* --- A MÁGICA AQUI --- */
+  white-space: nowrap; /* <--- Proíbe o texto de quebrar linha */
+  width: max-content; /* <--- O botão fica do tamanho exato do texto */
+}
+
+.img-bolo {
+  width: 399px; 
+  object-fit: contain;
+  margin-top: 120px;
+  margin-left: -25px;
+}
+/* --- CARTÃO 2: FESTA --- */
+.cartao-festa {
+  background-color: #ffaa99;
+  position: relative; 
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.texto-festa, .btn-orcamento {
+  z-index: 2; 
+  position: relative;
+}
+
+.cartao-festa .texto-festa {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.btn-orcamento {
+  background-color: #ffc2b3;
+  color: white;
+  border: none;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.img-bandeirolas {
+  position: absolute;
+  top: -50px;    /* <--- Valor negativo empurra a imagem PARA CIMA, saindo um pouco do cartão */
+  left: -75px;   /* <--- Valor negativo empurra PARA A ESQUERDA (não esqueça do 'px'!) */
+  width: 250px; 
+  z-index: 0;
+  opacity: 0.5; 
+}
+
+.img-baloes {
+  position: absolute;
+  width: 250px; /* Aumentamos o tamanho (antes estava 110px) */
+  bottom: -10px; /* Um valor positivo aqui empurra os balões para CIMA */
+  right: -50px; /* Mantém eles encostadinhos no canto direito */
+  z-index: 0;
+  object-fit: contain;
+  opacity: 0.6; /* A MÁGICA DA TRANSPARÊNCIA (vai de 0.1 até 1.0) */
+}
+
+/* --- BARRA DE PESQUISA --- */
+.area-pesquisa {
+  background-color: white;
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.caixa-pesquisa {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.caixa-pesquisa input {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.btn-pesquisar {
+  background-color: #ff3333;
+  color: white;
+  border: none;
+  padding: 0 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* ========================================= */
+/* --- TELA 2: ESCOLHA DE PERFIL --- */
+/* ========================================= */
+
+/* Container principal da tela nova */
+.tela-cadastro {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Empurra a caixinha branca para a direita */
+  min-height: 70vh; /* Ocupa o restante da tela abaixo do cabeçalho */
+  position: relative;
+  padding-right: 15%; /* Dá um respiro da borda direita da tela */
+}
+
+/* Marca d'água gigante da logo no fundo (lado esquerdo) */
+.logo-fundo {
+  position: absolute;
+  left: 5%; 
+  top: 50%;
+  transform: translateY(-50%); /* Garante que ela fique bem no meio verticalmente */
+  width: 700px; /* Logo gigante! */
+  opacity: 0.15; /* Bem clarinha pra não atrapalhar a leitura */
+  z-index: 0;
+  pointer-events: none; /* O mouse passa direto por ela sem bugar */
+}
+
+/* Caixa branca onde ficam os textos e botões */
+.caixa-escolha {
+  background-color: rgba(255, 255, 255, 0.6); /* Branco com 60% de transparência */
+  padding: 60px 80px;
+  border-radius: 20px;
+  z-index: 1; /* Fica por cima da logo de fundo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* Dá uma sombrinha de leve pra descolar do fundo */
+}
+
+/* Título "voce deseja ser?" */
+.caixa-escolha h2 {
+  font-size: 1.8rem;
+  color: #333;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Container que alinha os dois botões lado a lado */
+.botoes-escolha {
+  display: flex;
+  gap: 20px;
+}
+
+/* Estilo dos botões VENDEDOR e USUARIO */
+.btn-vermelho {
+  background-color: #ff3333;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out; /* Deixa a animação suave */
+}
+
+/* Efeito de quando passa o mouse por cima do botão */
+.btn-vermelho:hover {
+  background-color: #cc0000;
+  transform: scale(1.05); /* Dá uma leve crescidinha no botão */
+}
+/* ========================================= */
+/* --- TELAS DE FORMULÁRIOS (USUÁRIO/VENDEDOR) --- */
+/* ========================================= */
+
+.caixa-formulario {
+  background-color: white; /* Caixa 100% branca para os formulários */
+  padding: 40px 60px;
+  border-radius: 20px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.titulo-form {
+  color: #ff3333;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 30px;
+  margin-top: 0;
+}
+
+/* Estrutura das linhas e colunas do formulário */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.linha-form {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.grupo-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Tamanhos das colunas para bater com o design */
+.w-100 { flex: 100%; }
+.w-70 { flex: 70%; }
+.w-50 { flex: 50%; }
+.w-30 { flex: 30%; }
+
+/* Estilo dos textos em cima dos inputs (Labels) */
+.grupo-input label {
+  color: #ff3333;
+  font-size: 1rem;
+}
+
+/* Estilo das caixinhas de digitar (Inputs) */
+.grupo-input input {
+  border: 2px solid #000; /* Borda preta como no design */
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 1rem;
+  outline: none;
+}
+
+/* Quando clica dentro do input, a borda fica vermelha */
+.grupo-input input:focus {
+  border-color: #ff3333; 
+}
+
+/* Botões do final do formulário */
+.botoes-form {
+  display: flex;
+  justify-content: flex-end; /* Joga os botões para a direita */
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.btn-cancelar {
+  background-color: transparent;
+  color: #ff3333;
+  border: 2px solid #ff3333;
+  padding: 12px 30px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-cancelar:hover {
+  background-color: #ffeeee;
+}
+
+.btn-salvar {
+  background-color: #ff3333;
+  color: white;
+  border: 2px solid #ff3333;
+  padding: 12px 30px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-salvar:hover {
+  background-color: #cc0000;
+  border-color: #cc0000;
+}
+
+/* ========================================= */
+/* --- TELA 6: DASHBOARD (HOME LOGADA) --- */
+/* ========================================= */
+
+.fundo-branco {
+  background-color: #ffffff; /* O dashboard tem fundo branco */
+  min-height: 100vh;
+}
+
+.layout-dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- Menu Lateral --- */
+.menu-lateral {
+  width: 250px;
+  background-color: #ffeef5; /* Rosinha bem claro */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0;
+  border-right: 1px solid #ffe1eb;
+}
+
+.logo-lateral {
+  width: 120px;
+  margin-bottom: 50px;
+}
+
+.nav-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+}
+
+.item-menu {
+  background: none;
+  border: none;
+  color: #ff3333;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  transition: 0.2s;
+}
+
+.item-menu:hover {
+  transform: scale(1.05);
+}
+
+.menu-conta {
+  margin-top: auto; /* Empurra o botão "Minha conta" lá pro final */
+}
+
+/* --- Área de Conteúdo --- */
+.conteudo-dashboard {
+  flex: 1;
+  padding: 30px 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Topo do Dashboard (Menu e Carrinho) */
+.header-dashboard {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.caixa-categorias {
+  background-color: #ffeef5;
+  padding: 15px 50px;
+  border-radius: 10px;
+  display: flex;
+  gap: 60px;
+}
+
+.caixa-categorias a {
+  text-decoration: none;
+  color: #ff3333;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.icone-carrinho {
+  position: absolute;
+  right: 0;
+  font-size: 2rem;
+  color: #ff3333;
+  cursor: pointer;
+}
+
+/* --- Seção de Ofertas --- */
+.titulo-secao {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.caixa-carrossel {
+  background-color: #ffdce6; /* Fundo rosinha da caixa de ofertas */
+  border-radius: 20px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.area-cards-ofertas {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+  justify-content: space-around;
+}
+
+/* Cards de Produtos */
+.card-produto {
+  background-color: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.card-produto img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.card-produto p {
+  font-size: 0.9rem;
+  margin: 5px 0 10px 0;
+  color: #333;
+  line-height: 1.2;
+}
+
+.preco-antigo {
+  font-size: 0.8rem;
+  color: #999;
+  text-decoration: line-through; /* Corta o preço antigo */
+}
+
+.preco-novo {
+  font-size: 1.1rem;
+  color: #00cc66; /* Verde do seu layout */
+  font-weight: bold;
+}
+
+/* Botão de seta */
+.btn-seta-carrossel {
+  position: absolute;
+  right: -20px;
+  background-color: transparent;
+  border: 2px solid white;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* ========================================= */
+/* --- TELA 7: PEDIDOS (SUA SACOLINHA) --- */
+/* ========================================= */
+
+.secao-sacola {
+  background-color: #fff0f5; /* Rosinha bem claro do fundo da sacola */
+  padding: 40px;
+  border-radius: 20px;
+  margin-top: 20px;
+}
+
+.titulo-sacola {
+  font-size: 1.5rem;
+  color: #000;
+  margin-top: 0;
+  margin-bottom: 30px;
+}
+
+.lista-sacola {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-sacola {
+  background-color: #ffffff; /* Fundo branco do item */
+  padding: 15px 30px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.card-sacola img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.nome-produto-sacola {
+  flex: 1; /* Faz o texto ocupar o espaço do meio, empurrando os preços pra direita */
+  margin-left: 30px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Botões de - e + */
+.controles-qtd {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-right: 50px;
+  color: #ff3333;
+  font-weight: bold;
+}
+
+.controles-qtd button {
+  background: none;
+  border: none;
+  color: #ff3333;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.controles-qtd button:hover {
+  transform: scale(1.2); /* Dá um zoomzinho ao passar o mouse */
+}
+
+/* Preços alinhados à direita */
+.precos-sacola {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
