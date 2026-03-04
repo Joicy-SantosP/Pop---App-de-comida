@@ -102,7 +102,7 @@ http://localhost:5173
 ```
 
 ## 🔧 Próximas implementações:
-    - CRUD completo (criação, listagem, atualização e remoção) de produtos, lojas
-    - Documentação interativa via Swagger UI
-    - Validação de Email e Telefone
-    - Formas de Pagamento online
+- CRUD completo (criação, listagem, atualização e remoção) de produtos, lojas
+- Documentação interativa via Swagger UI
+- Validação de Email e Telefone
+- Formas de Pagamento online
