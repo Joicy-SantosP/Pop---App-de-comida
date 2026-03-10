@@ -1,10 +1,33 @@
-version: '3'
+version: '3.8'
+
 services:
+
   api:
     build: .
     ports:
-    - "1313:1313"
+      - "1313:1313"
     volumes:
-    - .:/app
+      - .:/app
     environment:
-    - FLASK_ENV=development
+      - FLASK_ENV=development
+      # Adicionamos a URL de conexão com o MySQL
+      - DATABASE_URL=mysql+pymysql://root:SENHA:3306/doceria_db
+    # Adicionamos a dependência para a API esperar o banco subir primeiro
+    depends_on:
+      - db
+
+  # O novo serviço de banco de dados
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: SENHA
+      MYSQL_DATABASE: doceria_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+# NÃO SUMI OS DADOS
+volumes:
+  db_data:
