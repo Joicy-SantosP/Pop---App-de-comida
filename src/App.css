@@ -191,40 +191,62 @@
   opacity: 0.6; /* A MÁGICA DA TRANSPARÊNCIA (vai de 0.1 até 1.0) */
 }
 
-/* --- BARRA DE PESQUISA --- */
+
+/* --- ÁREA DE PESQUISA --- */
 .area-pesquisa {
-  background-color: white;
-  padding: 30px;
+  background-color: transparent; 
   display: flex;
   justify-content: center;
+  align-items: center;
+  padding: 30px 20px;
+  width: 100%; /* Força o contêiner pai a ocupar a tela toda */
+  box-sizing: border-box; /* Garante que o padding não atrapalhe a largura */
 }
 
 .caixa-pesquisa {
   display: flex;
-  gap: 15px;
-  width: 100%;
-  max-width: 700px;
+  width: 100%; /* Obriga a caixa a esticar... */
+  max-width: 800px; /* ...até o limite de 1000px */
+  gap: 15px; 
+  background-color: transparent; 
+  box-shadow: none; 
 }
 
 .caixa-pesquisa input {
-  flex: 1;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
+  flex: 1; /* Faz o input crescer e ocupar o espaço livre */
+  padding: 15px 30px; 
+  border: 1px solid #b3b3b3; /* Bordinha cinza igual à da foto */
+  border-radius: 50px; /* Arredondamento próprio do campo de texto */
+  background-color: #fff; /* Fundo branco do campo de texto */
+  outline: none;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Deixa a cor do texto de fundo (placeholder) mais clarinha */
+.caixa-pesquisa input::placeholder {
+  color: #c4c4c4;
 }
 
 .btn-pesquisar {
-  background-color: #ff3333;
-  color: white;
+  padding: 15px 40px; /* Mesma altura (padding) do input para ficarem alinhados */
+  background-color: #fe3a46; 
+  color: #fff;
   border: none;
-  padding: 0 30px;
-  border-radius: 8px;
+  border-radius: 50px; /* Arredondamento próprio do botão */
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
+  transition: background-color 0.3s;
+  
+  /* Para não quebrar ou espremer o botão: */
+  white-space: nowrap; 
+  flex-shrink: 0; 
 }
 
+.btn-pesquisar:hover {
+  background-color: #d9313c; 
+}
 /* ========================================= */
 /* --- TELA 2: ESCOLHA DE PERFIL --- */
 /* ========================================= */
@@ -657,4 +679,261 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 5px;
+}
+
+/* ========================================= */
+/* --- AJUSTES DE SCROLL PARA A HOME --- */
+/* ========================================= */
+.home-com-scroll {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Isso garante que a página cresça e crie a barra de rolagem */
+  min-height: 100vh; 
+  padding-bottom: 50px;
+}
+
+.secao-nova {
+  width: 90%;
+  max-width: 1200px;
+  margin-top: 40px;
+}
+
+.titulo-esquerda {
+  text-align: left;
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.linha-divisoria {
+  width: 90%;
+  max-width: 1200px;
+  border: none;
+  border-top: 2px solid #e0c5ce; /* Cor da linha */
+  margin: 50px 0;
+}
+
+/* --- SEÇÃO MELHORES DOCERIAS --- */
+.lista-docerias {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.card-doceria {
+  background-color: transparent;
+  border: 2px solid #f3d4df;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.foto-doceria.circular {
+  width: 50px;
+  height: 50px;
+  background-color: #f3d4df; /* Placeholder para sua imagem */
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+.info-doceria h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.info-doceria p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.icone-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ff3333;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+/* --- SEÇÃO BANNERS --- */
+.secao-banners {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.banner {
+  flex: 1;
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+}
+
+.banner-rosa-claro { background-color: #ffccfa; }
+.banner-rosa-escuro { background-color: #ffb3f6; }
+
+.texto-banner h2 { margin: 0; font-size: 2rem; color: #a94b4b; }
+.texto-banner p { margin: 5px 0; font-size: 1.2rem; color: #333; }
+.texto-banner h3 { margin: 0; font-size: 2rem; color: #a94b4b; }
+.texto-banner.centralizado { text-align: center; width: 100%; }
+.texto-gigante { font-size: 3rem !important; }
+
+.img-banner-direita {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  height: 120px;
+}
+
+.img-banner-esquerda {
+  height: 100px;
+  margin-right: 20px;
+}
+
+/* --- SEÇÃO FORMIGUINHA --- */
+.secao-formiguinha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.texto-formiguinha {
+  flex: 1;
+}
+
+.texto-formiguinha h2 {
+  font-size: 2.5rem;
+  color: #333;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.texto-formiguinha p {
+  color: #888;
+  margin-bottom: 20px;
+}
+
+.btn-saiba-mais {
+  padding: 15px 40px;
+  font-size: 1rem;
+}
+
+.grid-formiguinha {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.quadrado-grid {
+  background-color: #ffd6fc; /* Esta cor já é a correta */
+  border-radius: 15px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  /* Use object-fit: cover se colocar img aqui dentro */
+}
+
+/* --- RODAPÉ (FOOTER) --- */
+.rodape-site {
+  width: 90%;
+  max-width: 1200px;
+  margin-bottom: 30px;
+}
+
+.rodape-superior {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.colunas-links {
+  display: flex;
+  gap: 60px;
+}
+
+.colunas-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.colunas-links li {
+  margin-bottom: 10px;
+}
+
+.colunas-links a {
+  text-decoration: none;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.redes-sociais h4 {
+  margin-bottom: 15px;
+}
+
+.icones-redes {
+  display: flex;
+  gap: 10px;
+}
+
+.icone-social {
+  width: 40px;
+  height: 40px;
+  background-color: #c0738d;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.rodape-inferior {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo-rodape {
+  width: 80px;
+}
+
+.rodape-inferior p {
+  font-size: 0.8rem;
+  color: #aaa;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* --- FUNDO BRANCO DA PARTE INFERIOR --- */
+.fundo-inferior-branco {
+  background-color: #ffffff;
+  width: 100%;
+  flex: 1; /* Faz a caixa branca preencher todo o resto da tela para baixo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  margin-top: 30px; /* Dá um espacinho da barra de pesquisa */
 }
