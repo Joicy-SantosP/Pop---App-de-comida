@@ -1,23 +1,22 @@
 from config import db
 
-class Restaurante(db.Model):
-    __tablename__ = 'restaurante'
+class Restaurantes(db.Model):
+    __tablename__ = 'restaurantes'
     
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(50), nullable=False)
     cnpj = db.Column(db.String(14), nullable=False, unique=True)
-    faturamento = db.Column(db.Float, default=0.0, nullable=False) # Correção: Float maiúsculo e default 0
-    aberto = db.Column(db.Boolean, default=False, nullable=False)  # Nova regra de negócio
+    faturamento = db.Column(db.Float, default=0.0, nullable=False)
+    aberto = db.Column(db.Boolean, default=False, nullable=False)
     
-    # id_item removido! O relacionamento agora é 1 para N (1 Restaurante tem N Produtos)
+    # chave estrangeira
+    pedidos = db.relationship('Pedidos', back_populates='restaurante')
     
-    pedidos = db.relationship('Pedido', back_populates='restaurante')
-    # No futuro, você adicionará: produtos = db.relationship('Produto', backref='restaurante')
-    
-    def __init__(self, nome, cnpj, faturamento=0.0):
+    def __init__(self, nome, cnpj, faturamento=0.0, aberto=False):
         self.nome = nome
         self.cnpj = cnpj
         self.faturamento = faturamento
+        self.aberto = aberto
         
     def to_dict(self):
         return {
@@ -27,25 +26,24 @@ class Restaurante(db.Model):
             'faturamento': self.faturamento,
             'aberto': self.aberto
         }
-    
-# rotas
+
+# ---  REGRA DE NEGÓCIO ---
 
 class RestauranteNaoIdentificado(Exception):
     pass
 
 def getRestaurantes():
-    restaurantes = Restaurante.query.all()
-    # Retornando a lista e o status 200 para manter padrão com as rotas
+    restaurantes = Restaurantes.query.all()
     return [restaurante.to_dict() for restaurante in restaurantes], 200
     
 def obter_restaurante_por_id(id):
     try:
-        restaurante = Restaurante.query.get(id)
+        restaurante = db.session.get(Restaurantes, id)
         if not restaurante:
             raise RestauranteNaoIdentificado('Restaurante não encontrado')
         return restaurante.to_dict(), 200
     except RestauranteNaoIdentificado as e:
-        return {"error": str(e)}, 400 
+        return {"error": str(e)}, 404
 
 def criarRestaurante(dados):
     try:
@@ -53,22 +51,21 @@ def criarRestaurante(dados):
         cnpj = dados['cnpj']
         faturamento = dados.get('faturamento', 0.0)
 
-        restaurante = Restaurante(nome=nome, cnpj=cnpj, faturamento=faturamento)
+        restaurante = Restaurantes(nome=nome, cnpj=cnpj, faturamento=faturamento)
 
         db.session.add(restaurante)
         db.session.commit()
 
-        return restaurante.to_dict(), 201 # 201 é o status correto para "Criado"
+        return restaurante.to_dict(), 201
     except KeyError as e:
         return {"erro": f"Campo obrigatório faltando: {str(e)}"}, 400
 
 def updateRestaurante(idRestaurante, dados):
     try:
-        restaurante = Restaurante.query.get(idRestaurante)
+        restaurante = db.session.get(Restaurantes, idRestaurante)
         if not restaurante:
             raise RestauranteNaoIdentificado("Restaurante não encontrado")
 
-        # Correção: IFs independentes para atualizar múltiplos campos
         if 'nome' in dados:
             restaurante.nome = dados['nome']
         if 'cnpj' in dados:
@@ -81,16 +78,16 @@ def updateRestaurante(idRestaurante, dados):
         db.session.commit()
         return restaurante.to_dict(), 200
     except RestauranteNaoIdentificado as e:
-        return {"erro": str(e)}, 400 
+        return {"erro": str(e)}, 404
 
 def deleteRestaurante(idRestaurante):
     try:
-        restaurante = Restaurante.query.get(idRestaurante)
+        restaurante = db.session.get(Restaurantes, idRestaurante)
         if not restaurante:
             raise RestauranteNaoIdentificado("Restaurante não encontrado")
 
         db.session.delete(restaurante)
         db.session.commit()
-        return {"mensagem": "Restaurante deletado com sucesso"}, 200 # Retorno mais claro
+        return {"mensagem": "Restaurante deletado com sucesso"}, 200
     except RestauranteNaoIdentificado as e:
-        return {"erro": str(e)}, 400
+        return {"erro": str(e)}, 404
