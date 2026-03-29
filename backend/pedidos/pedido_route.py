@@ -2,7 +2,6 @@ from flask import request
 from config import db
 from pedido_model import Pedido
 from restaurante_model import Restaurante
-# Supondo que você tenha um modelo ItensPedido e Produto
 # from item_model import ItensPedido 
 # from produto_model import Produto
 
@@ -11,7 +10,7 @@ def criarPedido():
     restaurante_id = dados.get('restaurante_id')
     cliente_id = dados.get('cliente_id') # Importante saber quem pede
     
-    # 1. Valida se o restaurante existe PRIMEIRO
+    # VALIDAÇÃO DA EXISTENCIA
     restaurante = Restaurante.query.get(restaurante_id)
     if not restaurante:
         return {"erro": "Restaurante não encontrado"}, 404
