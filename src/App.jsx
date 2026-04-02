@@ -275,8 +275,13 @@ function App() {
           <img src={imgLogo} alt="Fundo" className="logo-fundo" />
           <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
             <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Token de Autenticação
+              Digite o código de 6 digitos que enviamos
             </h2>
+            
+            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              para o seu email
+            </h3>
+
             <div className="linha-token">
               <input type="text" maxLength="1" className="input-token" />
               <input type="text" maxLength="1" className="input-token" />
