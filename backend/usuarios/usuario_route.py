@@ -100,13 +100,13 @@ def request_login():
     token = generate_token()
 
     usuario.login_token = token
-    usuario.login_token_expiration = datetime.utcnow() + timedelta(minutes=10)
+    usuario.login_token_expiration = datetime.utcnow() + timedelta(minutes=13)
     db.session.commit()
 
     send_email(
         to_email=email,
         subject="Seu código de login",
-        body=f"Seu código de login é: {token}. Ele expira em 10 minutos."
+        body=f"Seu código de login é: {token}. Ele expira em 13 minutos."
     )
 
     return jsonify({"message": "Token enviado para o email"}), 200

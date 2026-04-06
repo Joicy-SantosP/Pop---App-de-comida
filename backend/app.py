@@ -3,12 +3,14 @@ from flask_jwt_extended import JWTManager
 
 #  rotas (Blueprints)
 from usuarios.usuario_route import usuario_bp
-from restaurantes import restaurantes_blueprint 
-from pedidos_route import pedidos_blueprint 
+from restaurantes.restaurante_route import restaurantes_blueprint 
+from pedidos.pedido_route import pedidos_blueprint 
+from produtos.produto_route import produto_bp
+
 
 # 2. IMPORTANTE: Importar os models para o db.create_all() criar as tabelas!
-from restaurante_model import Restaurante
-from pedido_model import Pedido
+from restaurantes.restaurante_model import Restaurantes
+from pedidos.pedido_model import ItemPedido
 
 
 app.config["JWT_SECRET_KEY"] = "chave_super_secreta" # Dica: no futuro, coloque isso numa variável de ambiente!
@@ -17,6 +19,7 @@ jwt = JWTManager(app)
 # 3. Registrando todas as rotas no app
 app.register_blueprint(usuario_bp)
 app.register_blueprint(restaurantes_blueprint)
+app.register_blueprint(produto_bp)
 # app.register_blueprint(pedidos_blueprint) <-- Descomente quando criar o de pedidos
 
 @app.route("/", methods=['GET'])
