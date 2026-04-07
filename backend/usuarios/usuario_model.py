@@ -5,10 +5,10 @@ class Usuario(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(50), nullable=False)
-    cpf = db.Column(db.String(14), nullable=False, unique=True)
+    cpf = db.Column(db.String(14), nullable=True, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
-    telefone = db.Column(db.String(15), nullable=False)
-    data_nascimento = db.Column(db.Date, nullable=False)
+    telefone = db.Column(db.String(15), nullable=True)
+    data_nascimento = db.Column(db.Date, nullable=True)
     
     email_token = db.Column(db.String(6), nullable=True)
     email_token_expiration = db.Column(db.DateTime, nullable=True)

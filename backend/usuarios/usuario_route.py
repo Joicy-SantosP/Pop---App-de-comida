@@ -17,18 +17,35 @@ def criar_usuario():
     dados = request.json
     
     email = dados.get("email")
+    provider = dados.get("provider")  
     
     if not email:
         return jsonify({"erro": "Email é obrigatório"}), 400
-    
-    
-    try:
-        data_nascimento = datetime.strptime(
-            dados.get('data_nascimento'), "%Y-%m-%d"
-        ).date()
-    except:
-        return {"error": "Data inválida. Use o formato AAAA-MM-DD."}, 400
-    
+
+
+    if not provider:
+        if not dados.get("nome"):
+            return jsonify({"erro": "Nome é obrigatório"}), 400
+        
+        if not dados.get("cpf"):
+            return jsonify({"erro": "CPF é obrigatório"}), 400
+        
+        if not dados.get("telefone"):
+            return jsonify({"erro": "Telefone é obrigatório"}), 400
+        
+        if not dados.get("data_nascimento"):
+            return jsonify({"erro": "Data de nascimento é obrigatória"}), 400
+
+
+    data_nascimento = None
+    if dados.get("data_nascimento"):
+        try:
+            data_nascimento = datetime.strptime(
+                dados.get('data_nascimento'), "%Y-%m-%d"
+            ).date()
+        except:
+            return {"error": "Data inválida. Use o formato AAAA-MM-DD."}, 400
+
     novo_usuario = Usuario(
         nome=dados.get('nome'),
         cpf=dados.get('cpf'),
@@ -36,16 +53,19 @@ def criar_usuario():
         telefone=dados.get('telefone'),
         data_nascimento=data_nascimento,
     )
-    
+
+
     token_email = generate_token()
-    token_telefone = generate_token()
-    
     novo_usuario.email_token = token_email
     novo_usuario.email_token_expiration = datetime.utcnow() + timedelta(minutes=13)
-    
-    novo_usuario.telefone_token = token_telefone
-    novo_usuario.telefone_token_expiration = datetime.utcnow() + timedelta(minutes=18)
-    
+
+    if dados.get("telefone"):
+        token_telefone = generate_token()
+        novo_usuario.telefone_token = token_telefone
+        novo_usuario.telefone_token_expiration = datetime.utcnow() + timedelta(minutes=18)
+    else:
+        token_telefone = None
+
     db.session.add(novo_usuario)
     
     try:
@@ -53,22 +73,28 @@ def criar_usuario():
     except IntegrityError:
         db.session.rollback()
         return {"error": "CPF ou Email já cadastrados."}, 400
-    
+
+
     send_email(
         to_email=email,
-        subject="Seu código de verificação de cadastro de email",
+        subject="Seu código de verificação de cadastro PopDoces",
         body=f"""Olá,
-            Aqui está seu código de verificação:
-             
-            {token_email}
-            
-            Ele expira em 13 minutos.
-            Não informe esse código à ninguém."""
+Aqui está seu código de verificação:
+
+{token_email}
+
+Ele expira em 13 minutos.
+Não informe esse código à ninguém."""
     )
-    
-    print(f"O código de veriifcação do seu número de telefone é: {token_telefone}")
-    
-    return jsonify({"mensagem": "Código de validação de email enviado para seu email e telefone"}), 200
+
+
+    if token_telefone:
+        print(f"Código telefone: {token_telefone}")
+
+    return jsonify({
+        "mensagem": "Códigos de verificações enviados para seu email e telefone.",
+        "social": bool(provider)
+    }), 200
 
 @usuario_bp.route('/validar', methods=["POST"])
 def validar_codigo_usuario():
@@ -100,6 +126,11 @@ def validar_codigo_usuario():
 def validar_telefone():
     data = request.get_json()
     
+    telefone = data.get("telefone")
+
+    if not telefone:
+        return {"erro": "Telefone não informado"}, 400
+    
     usuario = Usuario.query.filter_by(telefone=data.get("telefone")).first()
     
     if not usuario or usuario.telefone_token != data.get("codigo"):
@@ -108,7 +139,7 @@ def validar_telefone():
     if not usuario.telefone_token_expiration or datetime.utcnow() > usuario.telefone_token_expiration:
         return {"erro": "Código de validação expirado"}, 400
     
-    usuario.token_verified = True
+    usuario.telefone_verified = True
     usuario.telefone_token = None
     usuario.telefone_token_expiration = None
     

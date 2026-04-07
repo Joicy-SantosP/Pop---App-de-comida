@@ -6,6 +6,7 @@ from usuarios.usuario_route import usuario_bp
 from restaurantes.restaurante_route import restaurantes_blueprint 
 from pedidos.pedido_route import pedidos_blueprint 
 from produtos.produto_route import produto_bp
+from usuarios.auth.social_auth_route import social_auth_bp
 
 
 # 2. IMPORTANTE: Importar os models para o db.create_all() criar as tabelas!
@@ -20,6 +21,7 @@ jwt = JWTManager(app)
 app.register_blueprint(usuario_bp)
 app.register_blueprint(restaurantes_blueprint)
 app.register_blueprint(produto_bp)
+app.register_blueprint(social_auth_bp, url_prefix="/auth")
 # app.register_blueprint(pedidos_blueprint) <-- Descomente quando criar o de pedidos
 
 @app.route("/", methods=['GET'])
