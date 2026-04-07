@@ -16,6 +16,12 @@ usuario_bp = Blueprint('usuario_routes', __name__, url_prefix='/usuarios')
 def criar_usuario():
     dados = request.json
     
+    email = dados.get("email")
+    
+    if not email:
+        return jsonify({"erro": "Email é obrigatório"}), 400
+    
+    
     try:
         data_nascimento = datetime.strptime(
             dados.get('data_nascimento'), "%Y-%m-%d"
@@ -26,11 +32,19 @@ def criar_usuario():
     novo_usuario = Usuario(
         nome=dados.get('nome'),
         cpf=dados.get('cpf'),
-        email=dados.get('email'),
+        email=email,
         telefone=dados.get('telefone'),
-        endereco=dados.get('endereco'),
         data_nascimento=data_nascimento,
     )
+    
+    token_email = generate_token()
+    token_telefone = generate_token()
+    
+    novo_usuario.email_token = token_email
+    novo_usuario.email_token_expiration = datetime.utcnow() + timedelta(minutes=13)
+    
+    novo_usuario.telefone_token = token_telefone
+    novo_usuario.telefone_token_expiration = datetime.utcnow() + timedelta(minutes=18)
     
     db.session.add(novo_usuario)
     
@@ -40,7 +54,67 @@ def criar_usuario():
         db.session.rollback()
         return {"error": "CPF ou Email já cadastrados."}, 400
     
-    return novo_usuario.to_dict(), 201
+    send_email(
+        to_email=email,
+        subject="Seu código de verificação de cadastro de email",
+        body=f"""Olá,
+            Aqui está seu código de verificação:
+             
+            {token_email}
+            
+            Ele expira em 13 minutos.
+            Não informe esse código à ninguém."""
+    )
+    
+    print(f"O código de veriifcação do seu número de telefone é: {token_telefone}")
+    
+    return jsonify({"mensagem": "Código de validação de email enviado para seu email e telefone"}), 200
+
+@usuario_bp.route('/validar', methods=["POST"])
+def validar_codigo_usuario():
+    data = request.get_json()
+    
+    email = data.get("email")
+    codigo = data.get("codigo")
+    
+    usuario = Usuario.query.filter_by(email=email).first()
+    
+    if not usuario:
+        return jsonify({"erro": "Usuário não encontrado"}), 404
+    
+    if usuario.email_token != codigo:
+        return jsonify({"erro": "Código de verificaçaõ inválido"}), 400
+    
+    if datetime.utcnow() > usuario.email_token_expiration:
+        return jsonify({"erro": "Código de verificação expirado"}), 400
+    
+    usuario.email_verified = True
+    usuario.email_token = None
+    usuario.email_token_expiration = None
+    
+    db.session.commit()
+    
+    return jsonify({"mensagem": "Email verificado com sucesso"}), 200
+
+@usuario_bp.route('/validar-telefone', methods=['POST'])
+def validar_telefone():
+    data = request.get_json()
+    
+    usuario = Usuario.query.filter_by(telefone=data.get("telefone")).first()
+    
+    if not usuario or usuario.telefone_token != data.get("codigo"):
+        return {"erro": "Código de validação inválido"}, 400
+    
+    if not usuario.telefone_token_expiration or datetime.utcnow() > usuario.telefone_token_expiration:
+        return {"erro": "Código de validação expirado"}, 400
+    
+    usuario.token_verified = True
+    usuario.telefone_token = None
+    usuario.telefone_token_expiration = None
+    
+    db.session.commit()
+    
+    return {"mensagem": "Número de telefone verificado"}, 200
 
 @usuario_bp.route('/', methods=['GET'])
 def listar_usuarios():
@@ -65,8 +139,6 @@ def atualizar_usuario(id):
         usuario.email = dados['email']
     if 'telefone' in dados:
         usuario.telefone = dados['telefone']
-    if 'endereco' in dados:
-        usuario.endereco = dados['endereco']
     if 'data_nascimento' in dados:
         usuario.data_nascimento = datetime.strptime(
             dados['data_nascimento'], "%Y-%m-%d"
