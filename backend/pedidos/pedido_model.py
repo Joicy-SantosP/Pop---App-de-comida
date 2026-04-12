@@ -1,20 +1,20 @@
 from config import db
-
+from produtos.produto_model import Produto
 
 class ItemPedido(db.Model):
     __tablename__ = 'item_pedido'
     
     id = db.Column(db.Integer, primary_key=True)
     
-    # Chave estrangeira ligando ao pedido
+    # chave estrangeira 
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=False)
     
     nome_doce = db.Column(db.String(100), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     preco_unitario = db.Column(db.Float, nullable=False)
 
-    # Relacionamento de volta para o Pedido principal
-    pedido = db.relationship('Pedidos', back_populates='itens')
+    
+    pedido = db.relationship('Pedido', back_populates='itens')
 
     def subtotal(self):
         return self.quantidade * self.preco_unitario
@@ -29,28 +29,26 @@ class ItemPedido(db.Model):
         }
 
 
-class Pedidos(db.Model):
+
+class Pedido(db.Model):
     __tablename__ = 'pedidos'
 
     id = db.Column(db.Integer, primary_key=True)
     
-    
-    # O padrão Flask geralmente é singular.
     restaurante_id = db.Column(db.Integer, db.ForeignKey('restaurantes.id'), nullable=False)
-    
     status = db.Column(db.String(20), default="Aberto", nullable=False) 
     total = db.Column(db.Float, default=0.0, nullable=False)
 
-    # Verifique também se a classe do seu modelo de restaurante é 'Restaurante' ou 'Restaurantes'
-    restaurante = db.relationship('Restaurantes', back_populates='pedidos')
     
-    # Um pedido tem VÁRIOS itens. Se deletar o pedido, deleta os itens junto (cascade)
+    restaurante = db.relationship('Restaurante', back_populates='pedidos')
+    
+    # Revisar arquitetura: um pedido tem VÁRIOS itens. Se deletar o pedido, deleta os itens junto
     itens = db.relationship('ItemPedido', back_populates='pedido', cascade="all, delete-orphan")
 
     def __init__(self, restaurante_id, status="Aberto"):
         self.restaurante_id = restaurante_id
         self.status = status
-        self.total = 0.0 # Começa zerado
+        self.total = 0.0 # começa zerado
 
     def atualizar_total(self):
         # Soma o subtotal de todos os itens da lista e atualiza o total
@@ -66,12 +64,10 @@ class Pedidos(db.Model):
         }
 
 
-#REGRAS DE NEGÓCIO
-
-
 def criar_carrinho(restaurante_id):
     try:
-        novo_pedido = Pedidos(restaurante_id=restaurante_id)
+
+        novo_pedido = Pedido(restaurante_id=restaurante_id)
         db.session.add(novo_pedido)
         db.session.commit()
         return novo_pedido.to_dict(), 201
@@ -82,7 +78,8 @@ def criar_carrinho(restaurante_id):
 
 def adicionar_item_ao_carrinho(pedido_id, dados_item):
     try:
-        pedido = db.session.get(Pedidos, pedido_id)
+        
+        pedido = db.session.get(Pedido, pedido_id)
         
         if not pedido:
             return {"erro": "Carrinho não encontrado"}, 404
@@ -90,28 +87,29 @@ def adicionar_item_ao_carrinho(pedido_id, dados_item):
         if pedido.status != "Aberto":
             return {"erro": "Este pedido já foi finalizado ou cancelado e não pode ser alterado"}, 400
 
-        # Cria o novo item (
+        doce_id = dados_item.get('doce_id')
+        
+        # O Back-end vai no banco e confere as informações reais
+        doce_real = db.session.get(Produto, doce_id) 
+        
+        if not doce_real:
+            return {"erro": "Doce não cadastrado no sistema"}, 404
+
+        # Cria o novo item usando dado do bd
         novo_item = ItemPedido(
-            nome_doce=dados_item['nome_doce'],
-            quantidade=dados_item['quantidade'],
-            preco_unitario=dados_item['preco_unitario']
+            nome_doce=doce_real.nome, # Nome real, do banco
+            quantidade=dados_item['quantidade'], # front-end
+            preco_unitario=doce_real.preco # Preço real do bd
         )
         
-     
-        # Isso atualiza a memória para o cálculo e prepara o INSERT no MySQL.
+        # Adiciona, atualiza a memória e recalcula
         pedido.itens.append(novo_item) 
-        
-        # Recalcula o faturamento com o novo item 
         pedido.atualizar_total()
         
         db.session.commit()
 
         return pedido.to_dict(), 200
-
-    except KeyError as e:
-        # Se o Front-end esquecer de mandar o 'nome_doce', 'quantidade' ou 'preco_unitario'
-        return {"erro": f"Faltando dados obrigatórios do produto: {str(e)}"}, 400
         
     except Exception as e:
-        db.session.rollback() 
+        db.session.rollback()
         return {"erro": "Erro interno ao adicionar item", "detalhes": str(e)}, 500
