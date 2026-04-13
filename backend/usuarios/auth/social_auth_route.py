@@ -20,6 +20,10 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 REDIRECT_URI = "http://localhost:5000/auth/google/callback"
 
+FB_CLIENT_ID = os.getenv("FACEBOOK_CLIENT_ID")
+FB_CLIENT_SECRET = os.getenv("FACEBOOK_CLIENT_SECRET")
+FB_REDIRECT_URI = "http://localhost:5000/auth/facebook/callback"
+
 
 @social_auth_bp.route("/google")
 def google_login():
@@ -83,6 +87,68 @@ def google_callback():
     return redirect(
         f"http://localhost:5173/cadastro-complementar"
         f"?provider=google"
+        f"&provider_user_id={provider_user_id}"
+        f"&email={email}"
+    )
+    
+@social_auth_bp.route("/facebook")
+def facebook_login():
+    # URL de autorização do Facebook
+    base_url = "https://www.facebook.com/v19.0/dialog/oauth"
+    params = {
+        "client_id": FB_CLIENT_ID,
+        "redirect_uri": FB_REDIRECT_URI,
+        "scope": "email,public_profile", # O que você quer pedir ao usuário
+        "response_type": "code"
+    }
+    url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    return redirect(url)
+
+@social_auth_bp.route("/facebook/callback")
+def facebook_callback():
+    code = request.args.get("code")
+    if not code:
+        return jsonify({"error": "Código não fornecido"}), 400
+
+    # 1. Trocar o código pelo Access Token
+    token_url = "https://graph.facebook.com/v19.0/oauth/access_token"
+    token_params = {
+        "client_id": FB_CLIENT_ID,
+        "client_secret": FB_CLIENT_SECRET,
+        "redirect_uri": FB_REDIRECT_URI,
+        "code": code
+    }
+    token_response = requests.get(token_url, params=token_params).json()
+    fb_access_token = token_response.get("access_token")
+
+    if not fb_access_token:
+        return jsonify({"error": "Erro ao obter token do Facebook"}), 400
+
+    # 2. Buscar dados do usuário usando o token
+    # Diferente do Google (id_token), o Facebook exige uma chamada extra à Graph API
+    user_info_url = "https://graph.facebook.com/me"
+    user_info_params = {
+        "fields": "id,name,email",
+        "access_token": fb_access_token
+    }
+    user_info = requests.get(user_info_url, params=user_info_params).json()
+
+    provider_user_id = user_info.get("id")
+    email = user_info.get("email")
+
+    # 3. Reutilizando o service
+    user = login_social(
+        provider="facebook",
+        provider_user_id=provider_user_id,
+        email=email
+    )
+
+    if user:
+        return redirect("http://localhost:5173/dashboard")
+
+    return redirect(
+        f"http://localhost:5173/cadastro-complementar"
+        f"?provider=facebook"
         f"&provider_user_id={provider_user_id}"
         f"&email={email}"
     )
