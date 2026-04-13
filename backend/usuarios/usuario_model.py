@@ -4,7 +4,7 @@ class Usuario(db.Model):
     __tablename__ = 'usuarios'
     
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(50), nullable=False)
+    nome = db.Column(db.String(50), nullable=True)
     cpf = db.Column(db.String(14), nullable=True, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     telefone = db.Column(db.String(15), nullable=True)
@@ -20,9 +20,11 @@ class Usuario(db.Model):
     
     login_token = db.Column(db.String(6), nullable=True)
     login_token_expiration = db.Column(db.DateTime, nullable=True)
-
     
-    def __init__(self, nome, cpf,email,telefone,data_nascimento):
+    provider = db.Column(db.String(50), nullable=True)
+    provider_user_id = db.Column(db.String(255), nullable=True)
+    
+    def __init__(self, email, nome=None, cpf=None,telefone=None,data_nascimento=None):
         self.nome = nome
         self.cpf = cpf
         self.email = email

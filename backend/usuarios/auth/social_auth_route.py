@@ -2,6 +2,11 @@ from flask import Blueprint, request, jsonify, redirect
 import urllib.parse
 import requests
 import os
+from usuarios.auth.social_auth_model import SocialAuth
+from usuarios.usuario_model import Usuario
+from config import db
+from datetime import datetime
+
 
 from usuarios.auth.social_auth_service import login_social
 
@@ -50,7 +55,6 @@ def google_callback():
 
     token_response = requests.post(token_url, data=data).json()
 
-    # ✅ renomeado para evitar conflito
     google_token = token_response.get("id_token")
 
     if not google_token:
@@ -65,22 +69,53 @@ def google_callback():
     provider_user_id = idinfo["sub"]
     email = idinfo["email"]
 
-    # ⚠️ aqui era o erro (id_token não existia)
+
     user = login_social(
         provider="google",
         provider_user_id=provider_user_id,
-        email=email,
-        token=google_token
+        email=email
     )
 
     if user:
-        return jsonify({
-            "message": "Login realizado",
-            "user_id": user.id
-        }), 200
+        return redirect("http://localhost:5173/dashboard")
 
-    return jsonify({
-        "message": "Usuário precisa completar cadastro",
-        "provider_user_id": provider_user_id,
-        "email": email
-    }), 200
+    # novo usuário → completar cadastro
+    return redirect(
+        f"http://localhost:5173/cadastro-complementar"
+        f"?provider=google"
+        f"&provider_user_id={provider_user_id}"
+        f"&email={email}"
+    )
+    
+@social_auth_bp.route("/cadastro-complementar", methods=["POST"])
+def complete_social_register():
+    data = request.get_json()
+
+    provider = data.get("provider")
+    provider_user_id = data.get("provider_user_id")
+
+    nome = data.get("nome")
+    telefone = data.get("telefone")
+    cpf = data.get("cpf")
+    data_nascimento = data.get("data_nascimento")
+
+    social = SocialAuth.query.filter_by(
+        provider=provider,
+        provider_user_id=provider_user_id
+    ).first()
+
+    if not social:
+        return jsonify({"message": "Usuário não encontrado"}), 404
+
+    user = social.user
+
+    user.nome = nome
+    user.telefone = telefone
+    user.cpf = cpf
+    
+    if data_nascimento:
+        user.data_nascimento = datetime.strptime(data_nascimento, "%Y-%m-%d").date()
+
+    db.session.commit()
+
+    return jsonify({"message": "Cadastro completo"}), 200
