@@ -1,5 +1,5 @@
 import './App.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // --- SUAS IMAGENS ---
 import imgLogo from './assets/logo_grande.png';
@@ -22,12 +22,442 @@ import imgMenina2 from './assets/iconeMenina2.jpg';
 import imgMenina3 from './assets/iconeMenina3.jpg';
 import imgMenina4 from './assets/iconeMenina4.jpg';
 
+// --- Integração com API URL do backend ---
+const API_URL = 'http://localhost:5000';
+
 function App() {
   const [telaAtual, setTelaAtual] = useState('home');
 
   const [tipoProduto, setTipoProduto] = useState('preparado');
 
   const [lojas, setLojas] = useState([]);
+
+  const [providerId, setProviderId] = useState("");
+
+  useEffect(() => {
+    const path = window.location.pathname;
+
+    if (path === "/dashboard") {
+      setTelaAtual("dashboard");
+    }
+
+    if (path === "/cadastro-complementar") {
+      const params = new URLSearchParams(window.location.search);
+
+      const emailParam = params.get("email");
+      const providerParam = params.get("provider_user_id");
+
+      if (emailParam && providerParam) {
+        setEmail(emailParam);
+        setProviderId(providerParam);
+        setTelaAtual("cadastro-complementar");
+      }
+    }
+  }, []);
+
+  {/* Integração front e backend de Cadastro de Usuário */}
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
+
+  // 🔹 TOKENS
+  const [codigoEmail, setCodigoEmail] = useState(['', '', '', '', '', '']);
+  const [codigoTelefone, setCodigoTelefone] = useState(['', '', '', '', '', '']);
+
+  // 🔹 FUNÇÃO CADASTRO
+  const cadastrarUsuario = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/usuarios/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome,
+          email,
+          cpf,
+          telefone,
+          data_nascimento: dataNascimento
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.erro || data.error);
+        return;
+      }
+
+      alert(data.mensagem);
+
+      setTelaAtual('token-email-usuario');
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao conectar com o servidor");
+    }
+  };
+
+  // FUNÇÃO VALIDAR EMAIL
+  const validarEmail = async () => {
+      const codigoFinal = codigoEmail.join('');
+
+
+      try {
+        const response = await fetch('http://localhost:5000/usuarios/validar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            codigo: codigoFinal
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.erro);
+          return;
+        }
+
+        alert(data.mensagem);
+
+        // 👉 vai pra validação telefone
+        setTelaAtual('token-telefone-usuario');
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao validar email");
+      }
+  };
+
+  // 🔹 FUNÇÃO VALIDAR TELEFONE
+  const validarTelefone = async () => {
+      const codigoFinal = codigoTelefone.join('');
+
+      try {
+        const response = await fetch('http://localhost:5000/usuarios/validar-telefone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telefone,
+            codigo: codigoFinal
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.erro);
+          return;
+        }
+
+        alert(data.mensagem);
+
+        // 👉 finaliza fluxo
+        setTelaAtual('dashboard');
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao validar telefone");
+      }
+  };
+
+  // 🔹 HANDLER DOS INPUTS DE TOKEN
+  const handleCodigoChange = (e, index, tipo) => {
+      const value = e.target.value;
+
+      if (!/^[0-9]?$/.test(value)) return;
+
+      if (tipo === 'email') {
+        const novo = [...codigoEmail];
+        novo[index] = value;
+        setCodigoEmail(novo);
+
+      } else if (tipo === 'telefone') {
+        const novo = [...codigoTelefone];
+        novo[index] = value;
+        setCodigoTelefone(novo);
+
+      } else if (tipo === 'login') {
+        const novo = [...codigoLogin];
+        novo[index] = value;
+        setCodigoLogin(novo);
+
+      } else if (tipo === 'restaurante') {
+        const novo = [...codigoRestaurante];
+        novo[index] = value;
+        setCodigoRestaurante(novo);
+      }
+
+      if (value && e.target.nextSibling) {
+        e.target.nextSibling.focus();
+      }
+  };
+
+  {/* =================================================== */}
+
+  // Integração com a rota de Login do backend
+    const [emailLogin, setEmailLogin] = useState('');
+    const [codigoLogin, setCodigoLogin] = useState(['', '', '', '', '', '']);
+
+    const solicitarLogin = async () => {
+      try {
+          const response = await fetch('http://localhost:5000/usuarios/login/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailLogin })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(data.message);
+            return;
+          }
+
+          alert(data.message);
+
+          // 👉 vai pra tela de token
+          setTelaAtual('token-login');
+
+      } catch (error) {
+          console.error(error);
+          alert("Erro ao solicitar login");}
+    };
+
+    const verificarLogin = async () => {
+      const tokenFinal = codigoLogin.join('').trim();
+
+      console.log("Token login:", tokenFinal);
+
+      if (tokenFinal.length < 6) {
+        alert("Digite os 6 números");
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/usuarios/login/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailLogin,
+            token: tokenFinal
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.message);
+          return;
+        }
+
+        // 🔥 AQUI É MUITO IMPORTANTE
+        const accessToken = data.access_token;
+
+        // 👉 salvar token
+        localStorage.setItem('token', accessToken);
+
+        // 👉 ir pro sistema
+        setTelaAtual('dashboard');
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao verificar login");
+      }
+    };
+
+  {/* ================================================================ */}
+  // login/cadasto com o google
+
+
+    const completarCadastroGoogle = async () => {
+        try {
+          const response = await fetch("http://localhost:5000/auth/cadastro-complementar", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              provider: "google",
+              provider_user_id: providerId,
+              nome,
+              telefone,
+              cpf,
+              data_nascimento: dataNascimento,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(data.message);
+            return;
+          }
+
+          alert("Cadastro finalizado!");
+
+          setTelaAtual("dashboard");
+
+        } catch (error) {
+          console.error(error);
+          alert("Erro ao completar cadastro");
+        }
+    };
+
+    {/* ================================================== */}
+    // Integração Front e Back de Cadatsro de restaurantes:
+    const [form, setForm] = useState({
+      email: "",
+      nome: "",
+      celular: "",
+      cep: "",
+      cnpj: "",
+      especialidade: "",
+      cpf: "",
+      numero: "",
+      bairro: "",
+      endereco: "",
+      complemento: ""
+    });
+    const [codigoRestaurante, setCodigoRestaurante] = useState(['', '', '', '', '', '']);
+
+    const handleCadastroRestaurante = async () => {
+      if (!form.email) {
+        alert("Email é obrigatório");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/restaurantes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(form)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.erro || "Erro ao cadastrar");
+          return;
+        }
+
+        alert("Código enviado para o email!");
+
+        setTelaAtual("token-email-restaurante");
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro na requisição");
+      }
+    };
+
+    const validarRestaurante = async () => {
+      const codigoFinal = codigoRestaurante.join('');
+
+      try {
+        const response = await fetch("http://localhost:5000/restaurantes/validar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: form.email,
+            codigo: codigoFinal
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.erro);
+          return;
+        }
+
+        alert(data.mensagem);
+
+        setTelaAtual("dashboard");
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao validar código");
+      }
+    };
+
+  {/* ====================================================== */}
+
+  //Integração do backend de cadastro de produtos
+  const [formProduto, setFormProduto] = useState({
+      nome: "",
+      preco: "",
+      descricao: "",
+      id_restaurante: "",
+      imagem: null
+  });
+
+  const cadastrarProduto = async () => {
+  // O payload precisa bater com o que o Backend espera e com o que seu State tem
+    const payload = {
+      nome: formProduto.nome,
+      preco: parseFloat(formProduto.preco.replace(',', '.')), // Garante que o preço seja número
+      descricao: formProduto.descricao,
+      categoria: tipoProduto, // 'preparado', 'industrializado' ou 'combo'
+      id_restaurante: formProduto.id_restaurante, // CORREÇÃO: era .restaurante
+      imagem: null
+    };
+
+    console.log("PAYLOAD ENVIADO:", payload);
+
+    try {
+      const response = await fetch("http://localhost:5000/produtos/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || data.erro || "Erro desconhecido");
+        return;
+      }
+
+      alert("Produto cadastrado com sucesso!");
+      setTelaAtual("dashboard");
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao cadastrar produto");
+    }
+  };
+
+  const [restaurantes, setRestaurantes] = useState([]);
+
+
+  useEffect(() => {
+    const fetchRestaurantes = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/restaurantes"); 
+        const data = await response.json();
+
+        console.log("Restaurantes:", data); // DEBUG
+
+        if (response.ok) {
+          setLojas(data)
+          setRestaurantes(data);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar restaurantes", error);
+      }
+    };
+
+    fetchRestaurantes();
+  }, []);
 
   return (
     <div className={(telaAtual === 'dashboard' || telaAtual === 'pedidos') ? 'fundo-branco' : 'container-geral'}>
@@ -224,21 +654,101 @@ function App() {
             <h2 className="titulo-form">Usuário</h2>
             <form className="formulario">
               <div className="linha-form">
-                <div className="grupo-input w-70"><label>Nome</label><input type="text" /></div>
-                <div className="grupo-input w-30"><label>Telefone</label><input type="text" /></div>
+                <div className="grupo-input w-70"><label>Nome</label><input type="text" onChange={(e) => setNome(e.target.value)} /></div>
+                <div className="grupo-input w-30"><label>Telefone</label><input type="text" onChange={(e) => setTelefone(e.target.value)} /></div>
               </div>
               <div className="linha-form">
-                <div className="grupo-input w-100"><label>Email</label><input type="email" /></div>
+                <div className="grupo-input w-100"><label>Email</label><input type="email" onChange={(e) => setEmail(e.target.value)} /></div>
               </div>
               <div className="linha-form">
-                <div className="grupo-input w-50"><label>CPF</label><input type="text" /></div>
-                <div className="grupo-input w-50"><label>Data de nascimento</label><input type="date" /></div>
+                <div className="grupo-input w-50"><label>CPF</label><input type="text" onChange={(e) => setCpf(e.target.value)} /></div>
+                <div className="grupo-input w-50"><label>Data de nascimento</label><input type="date" onChange={(e) => setDataNascimento(e.target.value)} /></div>
               </div>
               <div className="botoes-form">
                 <button type="button" className="btn-cancelar" onClick={() => setTelaAtual('home')}>CANCELAR</button>
-                <button type="button" className="btn-salvar">SALVAR</button>
+                <button type="button" className="btn-salvar" onClick={cadastrarUsuario}>CONTINUAR</button>
               </div>
             </form>
+          </div>
+        </main>
+      )}
+
+      {/* ========================================== */}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO EMAIL*/}
+      {/* ========================================== */}
+      {telaAtual === 'token-email-usuario' && (
+        <main className="tela-cadastro">
+          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
+          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
+            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              Digite o código de 6 digitos que enviamos
+            </h2>
+            
+            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              para o seu email
+            </h3>
+
+            <div className="linha-token">
+                {[0,1,2,3,4,5].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    maxLength="1"
+                    className="input-token"
+                    onChange={(e) => handleCodigoChange(e, i, 'email')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                        e.target.previousSibling.focus();
+                      }
+                    }}
+                  />
+                ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={validarEmail}>
+                CONTINUAR
+              </button>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* ========================================== */}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO TELEFONE*/}
+      {/* ========================================== */}
+      {telaAtual === 'token-telefone-usuario' && (
+        <main className="tela-cadastro">
+          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
+          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
+            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              Digite o código de 6 digitos que enviamos
+            </h2>
+            
+            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              para o seu Telefone
+            </h3>
+
+            <div className="linha-token">
+                {[0,1,2,3,4,5].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    maxLength="1"
+                    className="input-token"
+                    onChange={(e) => handleCodigoChange(e, i, 'telefone')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                        e.target.previousSibling.focus();
+                      }
+                    }}
+                  />
+                ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={validarTelefone}>
+                Finalizar
+              </button>
+            </div>
           </div>
         </main>
       )}
@@ -254,14 +764,139 @@ function App() {
               <div className="linha-form" style={{ alignItems: 'flex-end' }}>
                 <div className="grupo-input w-70">
                   <label>Email</label>
-                  <input type="text" />
+                  <input type="text" onChange={(e) => setEmailLogin(e.target.value)} />
                 </div>
                 <div style={{ flex: '30%', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-salvar" style={{ padding: '12px 40px' }} onClick={() => setTelaAtual('token')}>
+                  <button type="button" className="btn-salvar" style={{ padding: '12px 40px' }}  onClick={solicitarLogin} >
                     Continuar
                   </button>
                 </div>
               </div>
+            </form>
+
+          {/* OU ACESSAR COM */}
+            <div style={{ marginTop: '30px', textAlign: 'center' }}>
+              <p style={{ marginBottom: '20px', color: '#999', fontWeight: '500' }}>
+                ou acessar com
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+                
+                {/* Google */}
+                <button
+                  style={{
+                    backgroundColor: '#ff3b3b',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '12px 25px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }} onClick={() => {window.location.href = "http://localhost:5000/auth/google";}}
+                >
+                  Google
+                </button>
+
+                {/* Facebook */}
+                <button
+                  style={{
+                    backgroundColor: '#fff',
+                    color: '#ff3b3b',
+                    border: '2px solid #ff3b3b',
+                    padding: '12px 25px',
+                    borderRadius: '8px',
+                    cursor: 'not-allowed',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Facebook
+                </button>
+
+              </div>
+            </div>  
+          </div>
+        </main>
+      )}
+
+      {/* ========================================== */}
+      {/* FINALIZAR CADASTRO (GOOGLE) */}
+      {/* ========================================== */}
+      {telaAtual === 'cadastro-complementar' && (
+        <main className="tela-cadastro">
+          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
+
+          <div className="caixa-formulario">
+            <h2 className="titulo-form">Complete seu cadastro</h2>
+
+            <p style={{
+              textAlign: 'center',
+              marginBottom: '25px',
+              color: '#999',
+              fontSize: '0.95rem'
+            }}>
+              Quase lá! Só precisamos de mais alguns dados 
+            </p>
+
+            <form className="formulario">
+
+              {/* NOME + TELEFONE */}
+              <div className="linha-form">
+                <div className="grupo-input w-70">
+                  <label>Nome</label>
+                  <input type="text" onChange={(e) => setNome(e.target.value)}/>
+                </div>
+
+                <div className="grupo-input w-30">
+                  <label>Telefone</label>
+                  <input type="text" onChange={(e) => setTelefone(e.target.value)} />
+                </div>
+              </div>
+
+              {/* EMAIL (VINDO DO GOOGLE) */}
+              <div className="linha-form">
+                <div className="grupo-input w-100">
+                  <label>Email</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    disabled 
+                    style={{ backgroundColor: '#eee', cursor: 'not-allowed' }}
+                  />
+                </div>
+              </div>
+
+              {/* CPF + DATA NASCIMENTO */}
+              <div className="linha-form">
+                <div className="grupo-input w-50">
+                  <label>CPF</label>
+                  <input type="text" onChange={(e) => setCpf(e.target.value)} />
+                </div>
+
+                <div className="grupo-input w-50">
+                  <label>Data de nascimento</label>
+                  <input type="date" onChange={(e) => setDataNascimento(e.target.value)}/>
+                </div>
+              </div>
+
+              {/* BOTÕES */}
+              <div className="botoes-form">
+                <button 
+                  type="button" 
+                  className="btn-cancelar" 
+                  onClick={() => setTelaAtual('login')}
+                >
+                  CANCELAR
+                </button>
+
+                <button 
+                  type="button" 
+                  className="btn-salvar"
+                  onClick={completarCadastroGoogle}
+                >
+                  CONTINUAR
+                </button>
+              </div>
+
             </form>
           </div>
         </main>
@@ -270,7 +905,7 @@ function App() {
       {/* ========================================== */}
       {/* TELA DE TOKEN */}
       {/* ========================================== */}
-      {telaAtual === 'token' && (
+      {telaAtual === 'token-login' && (
         <main className="tela-cadastro">
           <img src={imgLogo} alt="Fundo" className="logo-fundo" />
           <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
@@ -283,16 +918,25 @@ function App() {
             </h3>
 
             <div className="linha-token">
-              <input type="text" maxLength="1" className="input-token" />
-              <input type="text" maxLength="1" className="input-token" />
-              <input type="text" maxLength="1" className="input-token" />
-              <input type="text" maxLength="1" className="input-token" />
-              <input type="text" maxLength="1" className="input-token" />
-              <input type="text" maxLength="1" className="input-token" />
+                {[0,1,2,3,4,5].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    maxLength="1"
+                    className="input-token"
+                    value={codigoLogin[i]}
+                    onChange={(e) => handleCodigoChange(e, i, 'login')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                        e.target.previousSibling.focus();
+                      }
+                    }}
+                  />
+                ))}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={() => setTelaAtual('dashboard')}>
-                Finalizar
+              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={verificarLogin}>
+                Entrar
               </button>
             </div>
           </div>
@@ -668,37 +1312,37 @@ function App() {
                 <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>CEP*</label>
-                    <input type="text" placeholder="00000-000" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} />
+                    <input type="text" placeholder="00000-000" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.cep} onChange={(e) =>setForm({ ...form, cep: e.target.value })} />
                   </div>
                   <div style={{ flex: '2' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Bairro *</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value }) }/>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
                   <div style={{ flex: '2' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Endereço</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Numero</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.numero} onChange={(e) =>setForm({ ...form, numero: e.target.value })}/>
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Complemento</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })}/>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Estado</label>
-                    <input type="text" disabled style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} value={form.estado} onChange={(e)=>setFrom({...form,estado: e.target.value})} />
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Cidade</label>
-                    <input type="text" disabled style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} value={form.cidade} onChange={(e) => setForm({...form,cidade: e.target.value})}/>
                   </div>
                 </div>
 
@@ -714,17 +1358,17 @@ function App() {
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>CNPJ *</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cnpj}onChange={(e) =>setForm({ ...form, cnpj: e.target.value })}/>
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Especialidade</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.especialidade} onChange={(e) => setForm({ ...form, especialidade: e.target.value })}/>
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>E-mail</label>
-                      <input type="email" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="email" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.email}onChange={(e) =>setForm({ ...form, email: e.target.value })}/>
                     </div>
 
                     {/* AGRUPAMENTO: Possui Salão + Logo do Restaurante */}
@@ -763,17 +1407,17 @@ function App() {
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>CPF *</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cpf} onChange={(e) =>setForm({ ...form, cpf: e.target.value })}/>
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Nome completo</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.nome}onChange={(e) =>setForm({ ...form, nome: e.target.value })}/>
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Celular</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} />
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.celular}onChange={(e) =>setForm({ ...form, celular: e.target.value })}/>
                     </div>
 
                     {/* Botão Salvar sozinho na direita */}
@@ -782,9 +1426,9 @@ function App() {
                         <button style={{ 
                           width: '100%', padding: '12px', borderRadius: '8px', border: 'none', 
                           backgroundColor: '#ff3b3b', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
-                          boxShadow: '0 4px 10px rgba(255, 59, 59, 0.3)'
-                        }}>
-                          Feito!
+                          boxShadow: '0 4px 10px rgba(255, 59, 59, 0.3)' 
+                        }} onClick={handleCadastroRestaurante} >
+                          CONTINUAR
                         </button>
                       </div>
                     </div>
@@ -794,7 +1438,7 @@ function App() {
 
             </div>
           </main>
-
+        
           {/* RODAPÉ BRANCO INFERIOR */}
           <footer style={{ backgroundColor: '#fff', padding: '40px', borderTop: '2px solid #eaeaea' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -833,6 +1477,49 @@ function App() {
 
         </div>
       )}
+
+    {/* ========================================== */}
+    {/* TELA DE TOKEN EMAIL RESTAURANTE */}
+    {/* ========================================== */}
+    {telaAtual === 'token-email-restaurante' && (
+        <main className="tela-cadastro">
+          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
+          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
+            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              Digite o código de 6 digitos que enviamos
+            </h2>
+            
+            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
+              para o seu email
+            </h3>
+
+            <div className="linha-token">
+              {[0,1,2,3,4,5].map((i) => (
+                <input
+                  key={i}
+                  type="text"
+                  maxLength="1"
+                  className="input-token"
+                  value={codigoRestaurante[i]}
+                  onChange={(e) => handleCodigoChange(e, i, 'restaurante')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                      e.target.previousSibling.focus();
+                    }
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
+              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={validarRestaurante}>
+                Finalizar
+              </button>
+            </div>
+          </div>
+        </main>
+      )}
+
+      
       {/* ========================================== */}
       {/* TELA DE CADASTRO DE PRODUTO */}
       {/* ========================================== */}
@@ -940,11 +1627,11 @@ function App() {
                 <div style={{ display: 'flex', gap: '30px', marginBottom: '20px' }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Nome do produto</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} value={formProduto.nome} onChange={(e) => setFormProduto({...formProduto,nome:e.target.value})} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Preço</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} value={formProduto.preco} onChange={(e) =>setFormProduto({...formProduto,preco: e.target.value})} />
                   </div>
                 </div>
 
@@ -952,13 +1639,40 @@ function App() {
                 <div style={{ display: 'flex', gap: '30px', marginBottom: '20px' }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Descrição</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} />
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', boxSizing: 'border-box' }} value={formProduto.descricao} onChange={(e) => setFormProduto({...formProduto,descricao: e.target.value})} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Restaurante</label>
-                    <select style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem', backgroundColor: '#fff', boxSizing: 'border-box', cursor: 'pointer' }}>
-                      <option value=""></option>
-                      <option value="restaurante1">Restaurante 1</option>
+                    <select
+                      value={formProduto.id_restaurante ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        console.log("Selecionado:", value);
+
+                        setFormProduto((prev) => ({
+                          ...prev,
+                          id_restaurante: value === "" ? null : Number(value)
+                        }));
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1.5px solid #000',
+                        fontSize: '1rem',
+                        backgroundColor: '#fff',
+                        boxSizing: 'border-box',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">Selecione</option>
+
+                      {restaurantes.map((rest) => (
+                        <option key={rest.id} value={rest.id}>
+                          {rest.nome}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -967,7 +1681,7 @@ function App() {
                 <div style={{ display: 'flex', gap: '30px', marginBottom: '30px', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Imagem do Produto</label>
-                    <input type="file" id="upload-produto" accept="image/*" style={{ display: 'none' }} />
+                    <input id="upload-produto" accept="image/*" style={{ display: 'none' }} type="file"  />
                     <label htmlFor="upload-produto" style={{ 
                       width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', 
                       backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
@@ -993,7 +1707,7 @@ function App() {
                     padding: '12px 50px', borderRadius: '8px', border: 'none', 
                     backgroundColor: '#ff3b3b', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
                     boxShadow: '0 4px 10px rgba(255, 59, 59, 0.3)'
-                  }}>
+                  }} onClick={cadastrarProduto}>
                     Feito
                   </button>
                 </div>
