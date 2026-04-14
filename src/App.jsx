@@ -22,6 +22,22 @@ import imgMenina2 from './assets/iconeMenina2.jpg';
 import imgMenina3 from './assets/iconeMenina3.jpg';
 import imgMenina4 from './assets/iconeMenina4.jpg';
 
+// Importações das imagens da Home
+import cat1 from './assets/image-removebg-preview (1).png';
+import cat2 from './assets/image-removebg-preview (2).png';
+import cat3 from './assets/image-removebg-preview (3).png';
+import cat4 from './assets/image-removebg-preview (4).png';
+import cat5 from './assets/image-removebg-preview (5).png';
+
+import bannerDeitado1 from './assets/Poster Deitado 1.png';
+import bannerDeitado2 from './assets/Poster Deitado 2.png';
+import bannerDeitado3 from './assets/Poster Deitado 3.png';
+
+import bannerCumprido1 from './assets/Poster Cumprido 1.png';
+import bannerCumprido2 from './assets/Poster Cumprido 2.png';
+import bannerCumprido3 from './assets/Poster Cumprido 3.png';
+import bannerCumprido4 from './assets/Poster Cumprido 4.png';
+
 // --- Integração com API URL do backend ---
 // const API_URL = 'http://localhost:5000';
 
@@ -996,38 +1012,121 @@ function App() {
 
           <main className="conteudo-dashboard" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
 
-            {/* --- DASHBOARD --- */}
+{/* --- DASHBOARD --- */}
             {telaAtual === 'dashboard' && (
-              <>
-                <section className="secao-ofertas">
-                  <h3 className="titulo-secao">Ofertas especiais no precinho 😋</h3>
-                  <div className="caixa-carrossel">
-                    <div className="area-cards-ofertas">
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
+              <div style={{ width: '100%', fontFamily: 'sans-serif' }}>
+                
+                {/* ========================================== */}
+                {/* SEÇÃO 1: CATEGORIAS                        */}
+                {/* ========================================== */}
+                <section style={{ marginBottom: '50px' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '15px', color: '#000' }}>
+                    Pedir seu docinho no POP! é rápido, fácil e gostoso. Conheça algumas categorias
+                  </h3>
+                  
+                  {/* Faixa Rosa com as categorias */}
+                  <div style={{ 
+                    backgroundColor: '#ffe6e8', 
+                    borderRadius: '15px', 
+                    padding: '20px 30px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    position: 'relative' 
+                  }}>
+                    <div style={{ display: 'flex', gap: '20px', flex: 1, justifyContent: 'space-between', paddingRight: '50px', overflowX: 'auto' }}>
+                      {[
+                        { img: cat1, nome: 'Bolos' },
+                        { img: cat2, nome: 'Tortas' },
+                        { img: cat3, nome: 'Promoção' },
+                        { img: cat4, nome: 'Docinhos' },
+                        { img: cat5, nome: 'Salgados' },
+                        { img: cat1, nome: 'BomBons' } // Usando cat1 como placeholder para o sexto item
+                      ].map((categoria, index) => (
+                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', minWidth: '90px' }}>
+                          <div style={{ width: '100px', height: '100px', backgroundColor: '#fff', borderRadius: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <img src={categoria.img} alt={categoria.nome} style={{ width: '70px', objectFit: 'contain' }} />
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#999', fontWeight: '500' }}>{categoria.nome}</span>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn-seta-carrossel">&gt;</button>
+                    
+                    {/* Botão circular de seta */}
+                    <div style={{ 
+                      width: '40px', height: '40px', border: '2px solid #fff', borderRadius: '50%', 
+                      display: 'flex', justifyContent: 'center', alignItems: 'center', 
+                      position: 'absolute', right: '20px', cursor: 'pointer', color: '#fff', fontSize: '1.2rem'
+                    }}>
+                      &gt;
+                    </div>
                   </div>
                 </section>
-                
-                <section className="secao-lojas-dash" style={{ marginTop: '40px' }}>
-                  <h3 className="titulo-secao" style={{ color: 'black', textAlign: 'left', marginBottom: '30px' }}>Lojas</h3>
+
+                {/* ========================================== */}
+                {/* SEÇÃO 2: BANNERS DEITADOS                  */}
+                {/* ========================================== */}
+                <section style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginBottom: '60px' }}>
+                  <img src={bannerDeitado1} alt="Bora de Pão de Mel" style={{ width: '32%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                  <img src={bannerDeitado2} alt="Maçã do Amor" style={{ width: '32%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                  <img src={bannerDeitado3} alt="Para refrescar seu dia" style={{ width: '32%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                </section>
+
+                {/* ========================================== */}
+                {/* SEÇÃO 3: OFERTAS ESPECIAIS                 */}
+                {/* ========================================== */}
+                <section style={{ marginBottom: '60px' }}>
+                  <h3 style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '20px', color: '#000' }}>
+                    Ofertas especiais no precinho 😉
+                  </h3>
+                  
+                  {/* Faixa Rosa com as ofertas */}
+                  <div style={{ 
+                    backgroundColor: '#ffe6e8', 
+                    borderRadius: '15px', 
+                    padding: '30px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    position: 'relative' 
+                  }}>
+                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-between', flex: 1, paddingRight: '50px' }}>
+                      {[1, 2, 3, 4].map((item) => (
+                        <div key={item} style={{ flex: 1, backgroundColor: '#fff', borderRadius: '10px', padding: '15px', cursor: 'pointer' }}>
+                          <div style={{ width: '100%', height: '140px', backgroundColor: '#e0e0e0', borderRadius: '8px', marginBottom: '15px' }}>
+                             {/* Coloque a tag <img src={...} /> aqui quando tiver a imagem da oferta */}
+                          </div>
+                          <h4 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }}>Bolo de pote ninho com morango</h4>
+                          <p style={{ fontSize: '11px', textDecoration: 'line-through', color: '#ccc', margin: '0' }}>R$19,90</p>
+                          <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#00b894', margin: '0' }}>R$15,00</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Botão circular de seta */}
+                    <div style={{ 
+                      width: '40px', height: '40px', border: '2px solid #fff', borderRadius: '50%', 
+                      display: 'flex', justifyContent: 'center', alignItems: 'center', 
+                      position: 'absolute', right: '20px', cursor: 'pointer', color: '#fff', fontSize: '1.2rem'
+                    }}>
+                      &gt;
+                    </div>
+                  </div>
+                </section>
+
+                {/* ========================================== */}
+                {/* SEÇÃO 4: BANNERS COMPRIDOS (VERTICAIS)     */}
+                {/* ========================================== */}
+                <section style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginBottom: '60px' }}>
+                  <img src={bannerCumprido1} alt="Fatia de Bolo" style={{ width: '23%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                  <img src={bannerCumprido2} alt="Salgados" style={{ width: '23%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                  <img src={bannerCumprido3} alt="Brigadeiros" style={{ width: '23%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                  <img src={bannerCumprido4} alt="Torta Limão" style={{ width: '23%', borderRadius: '15px', cursor: 'pointer', objectFit: 'cover' }} />
+                </section>
+
+                {/* ========================================== */}
+                {/* SEÇÃO 5: LOJAS                             */}
+                {/* ========================================== */}
+                <section className="secao-lojas-dash" style={{ marginBottom: '50px' }}>
+                  <h3 className="titulo-secao" style={{ color: 'black', textAlign: 'left', marginBottom: '30px', fontSize: '1.2rem', fontWeight: 'bold' }}>Lojas</h3>
                   
                   {lojas.length === 0 ? (
                     <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '12px', border: '2px dashed #eaeaea' }}>
@@ -1037,30 +1136,39 @@ function App() {
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px 20px' }}>
                       {lojas.map((loja) => (
                         <div 
                           key={loja.id} 
-                          onClick={() => setTelaAtual('tela-restaurante')} // <--- AQUI FIZEMOS ELE SER CLICÁVEL!
+                          onClick={() => setTelaAtual('tela-restaurante')}
                           style={{ 
                             display: 'flex', alignItems: 'center', gap: '15px', 
-                            cursor: 'pointer', transition: 'transform 0.2s' 
+                            cursor: 'pointer', transition: 'transform 0.2s'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                         >
-                          <div style={{ width: '70px', height: '70px', backgroundColor: '#666', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                          <div style={{ width: '70px', height: '70px', backgroundColor: '#999', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="none"></rect><polyline points="21 15 16 10 5 21"></polyline></svg>
                           </div>
-                          <span style={{ fontSize: '1.3rem', fontWeight: '500', color: '#000' }}>{loja.nome}</span>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#333' }}>{loja.nome}</span>
                         </div>
                       ))}
                     </div>
                   )}
-                </section>
-              </>
-            )}
 
+                  {/* Botão Ver Mais */}
+                  {lojas.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
+                      <button style={{ padding: '10px 60px', backgroundColor: '#fff', color: '#ff4d6d', border: '1px solid #ff4d6d', borderRadius: '25px', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                        Ver mais
+                      </button>
+                    </div>
+                  )}
+                </section>
+
+              </div>
+            )}
             {/* --- PEDIDOS --- */}
             {telaAtual === 'pedidos' && (
               <section className="secao-sacola">
