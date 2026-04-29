@@ -1,6 +1,7 @@
 import './App.css';
 import { useEffect, useState } from 'react';
 
+
 // --- SUAS IMAGENS ---
 import imgLogo from './assets/logo_grande.png';
 import imgBolo from './assets/fotobolo.png';
@@ -21,6 +22,9 @@ import imgMenina1 from './assets/iconeMenina1.jpg';
 import imgMenina2 from './assets/iconeMenina2.jpg';
 import imgMenina3 from './assets/iconeMenina3.jpg';
 import imgMenina4 from './assets/iconeMenina4.jpg';
+import imgEntregador from './assets/Imagem entregador.png';
+import imgCriancas from './assets/imagem crianças.png';
+import imgFormigaDormindo from './assets/formigadormindo.png';
 
 // Importações das imagens da Home
 import cat1 from './assets/image-removebg-preview (1).png';
@@ -43,11 +47,27 @@ import bannerCumprido4 from './assets/Poster Cumprido 4.png';
 
 function App() {
   const [telaAtual, setTelaAtual] = useState('home');
-
   const [tipoProduto, setTipoProduto] = useState('preparado');
+  const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
 
+  const [carrinhoAberto, setCarrinhoAberto] = useState(false);
+  const [carrinhoVazio, setCarrinhoVazio] = useState(true); // Começa como true (vazio)
+
+  // Novo estado para guardar qual loja o usuário clicou
+  const [lojaSelecionada, setLojaSelecionada] = useState(null);
+
+  // --- LISTA DE LOJAS (Vazia, limpa e pronta para receber os dados do backend!) ---
   const [lojas, setLojas] = useState([]);
 
+  // Estados para o Modal de Produto
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [quantidadeProduto, setQuantidadeProduto] = useState(1);
+  const [itensCarrinho, setItensCarrinho] = useState([]);
+  
+  // --- ESTADOS DO MODAL DE ENDEREÇO ---
+  const [modalEnderecoAberto, setModalEnderecoAberto] = useState(false);
+  const [passoEndereco, setPassoEndereco] = useState(1); // Vai de 1 a 4
+  const [tipoFavorito, setTipoFavorito] = useState('');
   const [providerId, setProviderId] = useState("");
   {/* 
   useEffect(() => {
@@ -690,150 +710,210 @@ function App() {
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN CADASTRO DE USUÁRIO EMAIL*/}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO EMAIL    */}
       {/* ========================================== */}
       {telaAtual === 'token-email-usuario' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
-            
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu email
-            </h3>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button style={{ backgroundColor: '#fff', color: '#ff3b3b', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} onClick={() => setTelaAtual('selecao-perfil')}>Criar conta</button>
+              <button style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '10px 35px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setTelaAtual('login')}>ENTRAR</button>
+            </div>
+          </header>
 
-            <div className="linha-token">
-                {/*{[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    onChange={(e) => handleCodigoChange(e, i, 'email')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}*/}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} /*onClick={validarEmail}*/ onClick={() => setTelaAtual('token-telefone-usuario')}>
-                CONTINUAR
-              </button>
+
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>Digite o código de 6 digitos que enviamos</h2>
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>para o seu email</h3>
+
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {/*{[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        style={{ width: '50px', height: '50px', textAlign: 'center', fontSize: '1.5rem', borderRadius: '8px', border: '2px solid #000', outline: 'none', fontWeight: 'bold' }}
+                        onChange={(e) => handleCodigoChange(e, i, 'email')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
+                    ))}*/}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn-salvar" style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setTelaAtual('token-telefone-usuario')}>
+                    CONTINUAR
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN CADASTRO DE USUÁRIO TELEFONE*/}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO TELEFONE */}
       {/* ========================================== */}
       {telaAtual === 'token-telefone-usuario' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
-            
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu Telefone
-            </h3>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button style={{ backgroundColor: '#fff', color: '#ff3b3b', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} onClick={() => setTelaAtual('selecao-perfil')}>Criar conta</button>
+              <button style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '10px 35px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setTelaAtual('login')}>ENTRAR</button>
+            </div>
+          </header>
 
-            <div className="linha-token">
-                {/*{[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    onChange={(e) => handleCodigoChange(e, i, 'telefone')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}*/}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} /*onClick={validarTelefone}*/ onClick={() => setTelaAtual('dashboard')}>
-                Finalizar
-              </button>
+
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>Digite o código de 6 digitos que enviamos</h2>
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>para o seu Telefone</h3>
+
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {/*{[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        style={{ width: '50px', height: '50px', textAlign: 'center', fontSize: '1.5rem', borderRadius: '8px', border: '2px solid #000', outline: 'none', fontWeight: 'bold' }}
+                        onChange={(e) => handleCodigoChange(e, i, 'telefone')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
+                    ))}*/}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn-salvar" style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')}>
+                    Finalizar
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       )}
-
       {/* ========================================== */}
       {/* TELA DE LOGIN */}
       {/* ========================================== */}
       {telaAtual === 'login' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto' }}>
-            <form className="formulario">
-              <div className="linha-form" style={{ alignItems: 'flex-end' }}>
-                <div className="grupo-input w-70">
-                  <label>Email</label>
-                  <input type="text" /*onChange={(e) => setEmailLogin(e.target.value)}*/ />
-                </div>
-                <div style={{ flex: '30%', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-salvar" style={{ padding: '12px 40px' }}  /*onClick={solicitarLogin}*/ onClick={() => setTelaAtual('token-login')} >
-                    Continuar
-                  </button>
-                </div>
-              </div>
-            </form>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          {/* HEADER: Logo POP! e Botões do topo */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            {/* Logo */}
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+            
+            {/* Botões do Topo */}
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button 
+                style={{ backgroundColor: '#fff', color: '#ff3b3b', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                onClick={() => setTelaAtual('selecao-perfil')} // Ajuste para a tela correta de criar conta
+              >
+                Criar conta
+              </button>
+              <button 
+                style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '10px 35px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                ENTRAR
+              </button>
+            </div>
+          </header>
 
-          {/* OU ACESSAR COM */}
-            <div style={{ marginTop: '30px', textAlign: 'center' }}>
-              <p style={{ marginBottom: '20px', color: '#999', fontWeight: '500' }}>
-                ou acessar com
-              </p>
+          {/* CONTEÚDO: Imagem Esquerda + Formulário Direita */}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            
+            {/* LADO ESQUERDO - Ilustração Crianças */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgCriancas} alt="Crianças com doces" style={{ maxWidth: '500px', width: '100%', objectFit: 'contain' }} />
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+            {/* LADO DIREITO - Cartão Branco com o seu form */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '40px 50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '450px' }}>
                 
-                {/* Google */}
-                <button
-                  style={{
-                    backgroundColor: '#ff3b3b',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '12px 25px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }} /*onClick={() => {window.location.href = "http://localhost:5000/auth/google";}}*/ onClick={() => setTelaAtual('cadastro-complementar')}
-                >
-                  Google
-                </button>
+                <form className="formulario">
+                  {/* Seu input de Email adaptado para o novo visual (borda preta) */}
+                  <div className="linha-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    <div className="grupo-input" style={{ width: '100%' }}>
+                      <label style={{ display: 'block', color: '#ff3b3b', fontWeight: 'bold', marginBottom: '8px', fontSize: '0.9rem' }}>Email</label>
+                      <input 
+                        type="text" 
+                        style={{ width: '100%', padding: '10px 15px', borderRadius: '8px', border: '2px solid #000', outline: 'none', boxSizing: 'border-box' }}
+                        /*onChange={(e) => setEmailLogin(e.target.value)}*/ 
+                      />
+                    </div>
+                    
+                    {/* Botão Continuar */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                      <button 
+                        type="button" 
+                        className="btn-salvar" 
+                        style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 40px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }} 
+                        /*onClick={solicitarLogin}*/ 
+                        onClick={() => setTelaAtual('token-login')} 
+                      >
+                        Continuar
+                      </button>
+                    </div>
 
-                {/* Facebook */}
-                <button
-                  style={{
-                    backgroundColor: '#fff',
-                    color: '#ff3b3b',
-                    border: '2px solid #ff3b3b',
-                    padding: '12px 25px',
-                    borderRadius: '8px',
-                    cursor: 'not-allowed',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Facebook
-                </button>
+                  </div>
+                </form>
+
+                {/* OU ACESSAR COM (Seus botões sociais mantidos) */}
+                <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                  <p style={{ marginBottom: '20px', color: '#999', fontWeight: '500' }}>
+                    ou acessar com
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+                    {/* Google */}
+                    <button
+                      style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', flex: 1 }} 
+                      /*onClick={() => {window.location.href = "http://localhost:5000/auth/google";}}*/ 
+                      onClick={() => setTelaAtual('cadastro-complementar')}
+                    >
+                      Google
+                    </button>
+
+                    {/* Facebook */}
+                    <button
+                      style={{ backgroundColor: '#fff', color: '#ff3b3b', border: '2px solid #ff3b3b', padding: '10px 25px', borderRadius: '8px', cursor: 'not-allowed', fontWeight: 'bold', flex: 1 }}
+                    >
+                      Facebook
+                    </button>
+                  </div>
+                </div>  
 
               </div>
-            </div>  
-          </div>
-        </main>
+            </div>
+          </main>
+          
+        </div>
       )}
-
       {/* ========================================== */}
       {/* FINALIZAR CADASTRO (GOOGLE) */}
       {/* ========================================== */}
@@ -920,44 +1000,103 @@ function App() {
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN */}
+      {/* TELA DE TOKEN LOGIN */}
       {/* ========================================== */}
       {telaAtual === 'token-login' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          {/* HEADER: Logo POP! e Botões do topo */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            <img 
+              src={imgLogo} 
+              alt="POP!" 
+              style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} 
+              onClick={() => setTelaAtual('dashboard')} 
+            />
             
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu email
-            </h3>
-
-            <div className="linha-token">
-                {/*{[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    value={codigoLogin[i]}
-                    onChange={(e) => handleCodigoChange(e, i, 'login')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}*/}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} /*onClick={verificarLogin}*/ onClick={() => setTelaAtual('dashboard')}>
-                Entrar
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button 
+                style={{ backgroundColor: '#fff', color: '#ff3b3b', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                onClick={() => setTelaAtual('selecao-perfil')}
+              >
+                Criar conta
+              </button>
+              <button 
+                style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '10px 35px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                onClick={() => setTelaAtual('login')}
+              >
+                ENTRAR
               </button>
             </div>
-          </div>
-        </main>
+          </header>
+
+          {/* CONTEÚDO: Imagem Esquerda + Formulário Direita */}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            
+            {/* LADO ESQUERDO - Ilustração Entregador */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
+            </div>
+
+            {/* LADO DIREITO - Cartão Branco com o Token */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
+                
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>
+                  Digite o código de 6 digitos que enviamos
+                </h2>
+                
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>
+                  para o seu email
+                </h3>
+
+                {/* Campos do Token (Comentados, já com a lógica do state codigoLogin e layout novo) */}
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {/*{[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        value={codigoLogin[i]}
+                        style={{ 
+                          width: '50px', 
+                          height: '50px', 
+                          textAlign: 'center', 
+                          fontSize: '1.5rem', 
+                          borderRadius: '8px', 
+                          border: '2px solid #000', 
+                          outline: 'none', 
+                          fontWeight: 'bold',
+                          backgroundColor: '#fff'
+                        }}
+                        onChange={(e) => handleCodigoChange(e, i, 'login')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
+                    ))}*/}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button 
+                    type="button" 
+                    className="btn-salvar" 
+                    style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }} 
+                    /*onClick={verificarLogin}*/ 
+                    onClick={() => setTelaAtual('dashboard')}
+                  >
+                    Entrar
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </main>
+        </div>
       )}
 
       {/* ========================================== */}
@@ -966,7 +1105,8 @@ function App() {
       {(telaAtual === 'dashboard' || telaAtual === 'pedidos' || telaAtual === 'tela-restaurante') && (
         <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#fff' }}>
           
-          {/* CABEÇALHO COMPARTILHADO */}
+          {/* CABEÇALHO COMPARTILHADO */} 
+
           <header style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -1000,19 +1140,176 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-              <span onClick={() => setTelaAtual('cadastro')} style={{ cursor: 'pointer', color: '#ff3b3b', fontWeight: '600', fontSize: '1.1rem' }}>
-                Cadastros
+              
+              {/* === BOTÃO DE ENDEREÇOS ATUALIZADO AQUI === */}
+              <span 
+                onClick={() => {
+                  setModalEnderecoAberto(true);
+                  setPassoEndereco(1);
+                }} 
+                style={{ cursor: 'pointer', color: '#ff3b3b', fontWeight: '600', fontSize: '1.1rem' }}
+              >
+                Endereços
               </span>
-              <span style={{ color: '#ff3b3b', fontSize: '1.8rem', cursor: 'pointer' }} onClick={() => setTelaAtual('menu-usuario')}>👤</span>
-              <span onClick={() => setTelaAtual('pedidos')} style={{ cursor: 'pointer', fontSize: '1.5rem', color: '#ff3b3b' }} title="Ver carrinho de pedidos">
+
+            {/* === CONTAINER DO POP-UP DO USUÁRIO === */}
+            <div style={{ position: 'relative' }}>
+              <span
+                style={{ color: '#ff3b3b', fontSize: '1.8rem', cursor: 'pointer' }}
+                onClick={() => setMenuUsuarioAberto(!menuUsuarioAberto)}
+              >
+                👤
+              </span>
+
+              {/* MENU POP-UP USUÁRIO */}
+              {menuUsuarioAberto && (
+                <div className="popup-usuario">
+                  <div className="popup-header">
+                    <button className="btn-fechar" onClick={() => setMenuUsuarioAberto(false)}>X</button>
+                  </div>
+                  <h3 className="popup-saudacao">Olá Usuario do POP!</h3>
+                  <hr className="popup-linha" />
+                  <div className="popup-opcoes">
+                    <button className="btn-opcao"><span className="icone">🧾</span> Pedidos</button>
+                    <button className="btn-opcao"><span className="icone">👤</span> Meus dados</button>
+                    <button className="btn-opcao" onClick={() => { setTelaAtual('cadastro'); setMenuUsuarioAberto(false); }}>
+                      <span className="icone">📝</span> Cadastrar
+                    </button>
+                    <button className="btn-opcao"><span className="icone">❓</span> Ajuda</button>
+                    <button className="btn-opcao" onClick={() => { setTelaAtual('home'); setMenuUsuarioAberto(false); }}>
+                      <span className="icone">⬅️</span> Sair
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* === NOVO CONTAINER DO POP-UP DO CARRINHO === */}
+            <div style={{ position: 'relative' }}>
+              <span 
+                onClick={() => setCarrinhoAberto(!carrinhoAberto)} 
+                style={{ cursor: 'pointer', fontSize: '1.5rem', color: '#ff3b3b' }} 
+                title="Ver carrinho de pedidos"
+              >
                 🛒
               </span>
+
+              {/* MENU POP-UP CARRINHO */}
+              {carrinhoAberto && (
+                <div className="popup-carrinho" style={{ 
+                  position: 'absolute', top: '50px', right: '0', width: '380px', backgroundColor: '#fff', 
+                  borderRadius: '10px', padding: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', zIndex: 999 
+                }}>
+                  
+                  {/* Botão X para fechar o carrinho */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <span onClick={() => setCarrinhoAberto(false)} style={{ color: '#ff3b3b', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer' }}>X</span>
+                  </div>
+
+                  {itensCarrinho.length === 0 ? (
+                    /* --- ESTADO VAZIO COM A FORMIGUINHA --- */
+                    <div className="carrinho-vazio" style={{ textAlign: 'center', padding: '10px 0 30px 0' }}>
+                      <img 
+                        src={imgFormigaDormindo} 
+                        alt="Formiguinha fofa" 
+                        style={{ width: '180px', height: 'auto', marginBottom: '20px' }} 
+                      />
+                      <h3 style={{ color: '#555', fontWeight: 'bold', margin: '0 0 10px 0', fontSize: '1.2rem' }}>
+                        Sua sacola está vazia
+                      </h3>
+                      <p style={{ color: '#999', margin: 0, fontSize: '0.9rem' }}>
+                        adicione um docinho aqui
+                      </p>
+                    </div>
+                  ) : (
+                    /* --- ESTADO COM ITENS (DINÂMICO) --- */
+                    <div className="carrinho-cheio">
+                      <div className="carrinho-restaurante" style={{ marginBottom: '15px' }}>
+                        <p style={{ color: '#999', fontSize: '0.9rem', margin: '0 0 5px 0' }}>
+                          Seu pedido em <span style={{ color: '#ff3b3b', float: 'right', cursor: 'pointer' }}>Ver o cardápio</span>
+                        </p>
+                        <h4 style={{ color: '#8a1c1c', fontSize: '1.2rem', margin: 0 }}>{itensCarrinho[0]?.lojaNome}</h4>
+                      </div>
+                      
+                      <hr style={{ border: 'none', borderTop: '1px solid #eaeaea', marginBottom: '15px' }} />
+                      
+                      {/* Lista de Itens Adicionados */}
+                      <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                        {itensCarrinho.map((item, index) => (
+                          <div key={index} style={{ marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                              <span style={{ color: '#8a1c1c', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                {item.quantidade} x {item.nome}
+                              </span>
+                              <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                R$ {(item.preco * item.quantidade).toFixed(2).replace('.', ',')}
+                              </span>
+                            </div>
+                            <p style={{ color: '#999', fontSize: '0.9rem', margin: '0 0 10px 0' }}>{item.descricao}</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                              <span style={{ color: '#5dade2' }}>Item promocional</span>
+                              <div style={{ display: 'flex', gap: '15px' }}>
+                                <span style={{ color: '#ff3b3b', fontWeight: 'bold', cursor: 'pointer' }}>Editar</span>
+                                <span 
+                                  onClick={() => {
+                                    // Remove o item se clicar em Remover
+                                    const novoCarrinho = [...itensCarrinho];
+                                    novoCarrinho.splice(index, 1);
+                                    setItensCarrinho(novoCarrinho);
+                                  }} 
+                                  style={{ color: '#000', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  Remover
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <hr style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '15px 0' }} />
+                      
+                      {/* Resumo de Valores */}
+                      <div className="carrinho-resumo" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#999', fontWeight: 'bold' }}>
+                          <span>SubTotal</span>
+                          <span style={{ color: '#000' }}>
+                            R$ {itensCarrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0).toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#999', fontWeight: 'bold' }}>
+                          <span>Taxa de entrega</span>
+                          <span style={{ color: '#00b894' }}>Gratis</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000', fontWeight: 'bold', fontSize: '1.3rem', marginTop: '10px' }}>
+                          <span>Total</span>
+                          <span>
+                            R$ {itensCarrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0).toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Botões Finais */}
+                      <button style={{ width: '100%', backgroundColor: '#f03e69', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', marginBottom: '10px' }}>
+                        Escolher forma de pagamento
+                      </button>
+                      <button 
+                        onClick={() => setItensCarrinho([])} 
+                        style={{ width: '100%', backgroundColor: '#f5f5f5', color: '#000', border: '1px dashed #ccc', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        Esvaziar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
           </header>
 
           <main className="conteudo-dashboard" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
 
-{/* --- DASHBOARD --- */}
+            {/* --- DASHBOARD --- */}
             {telaAtual === 'dashboard' && (
               <div style={{ width: '100%', fontFamily: 'sans-serif' }}>
                 
@@ -1138,22 +1435,25 @@ function App() {
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px 20px' }}>
                       {lojas.map((loja) => (
-                        <div 
-                          key={loja.id} 
-                          onClick={() => setTelaAtual('tela-restaurante')}
-                          style={{ 
-                            display: 'flex', alignItems: 'center', gap: '15px', 
-                            cursor: 'pointer', transition: 'transform 0.2s'
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                        >
-                          <div style={{ width: '70px', height: '70px', backgroundColor: '#999', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="none"></rect><polyline points="21 15 16 10 5 21"></polyline></svg>
-                          </div>
-                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#333' }}>{loja.nome}</span>
+                      <div 
+                        key={loja.id} 
+                        onClick={() => {
+                          setLojaSelecionada(loja);
+                          setTelaAtual('tela-restaurante');
+                        }}
+                        style={{ 
+                          display: 'flex', alignItems: 'center', gap: '15px', 
+                          cursor: 'pointer', transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                      >
+                        <div style={{ width: '70px', height: '70px', backgroundColor: '#fff', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                          <img src={loja.logo} alt={loja.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
-                      ))}
+                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#333' }}>{loja.nome}</span>
+                      </div>
+                    ))}
                     </div>
                   )}
 
@@ -1183,18 +1483,21 @@ function App() {
             )}
 
             {/* --- NOVA TELA: DETALHES DO RESTAURANTE --- */}
-            {telaAtual === 'tela-restaurante' && (
+            {telaAtual === 'tela-restaurante' && lojaSelecionada && (
               <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
                 
                 {/* Cabeçalho do Restaurante */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
                   <div style={{ 
                     width: '100px', height: '100px', backgroundColor: '#999', borderRadius: '50%', 
-                    display: 'flex', justifyContent: 'center', alignItems: 'center' 
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
                   }}>
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="none"></rect><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <img src={lojaSelecionada.logo} alt={lojaSelecionada.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#000' }}>Nome do restaurante</h2>
+                  <div>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#000', margin: 0 }}>{lojaSelecionada.nome}</h2>
+                    <p style={{ color: '#777', margin: '5px 0 0 0' }}>{lojaSelecionada.especialidade}</p>
+                  </div>
                 </div>
 
                 <hr style={{ border: 'none', borderTop: '2px solid #eaeaea', marginBottom: '40px' }} />
@@ -1236,14 +1539,27 @@ function App() {
                   <h3 style={{ fontSize: '1.2rem', marginBottom: '30px' }}>Produtos da Loja</h3>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '40px' }}>
-                    {[1, 2, 3, 4].map((item) => (
-                      <div key={item} style={{ backgroundColor: '#ffe6e8', padding: '20px', borderRadius: '10px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <div style={{ width: '90px', height: '90px', backgroundColor: '#aaa', borderRadius: '5px' }}></div>
-                        <div>
-                          <p style={{ fontWeight: 'bold', margin: '0 0 8px 0', fontSize: '1.1rem' }}>Nome do produto</p>
-                          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#333' }}>Descrição</p>
-                          <p style={{ fontWeight: 'bold', margin: 0 }}>Preço</p>
+                    {lojaSelecionada.produtos.map((produto) => (
+                      <div 
+                        key={produto.id} 
+                        onClick={() => {
+                          setProdutoSelecionado(produto); 
+                          setQuantidadeProduto(1); 
+                        }}
+                        style={{ backgroundColor: '#ffe6e8', padding: '20px', borderRadius: '10px', display: 'flex', gap: '20px', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <div style={{ width: '90px', height: '90px', backgroundColor: '#aaa', borderRadius: '5px', overflow: 'hidden' }}>
+                          <img src={produto.imagem} alt={produto.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 'bold', margin: '0 0 8px 0', fontSize: '1.1rem' }}>{produto.nome}</p>
+                          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#333', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{produto.descricao}</p>
+                          <p style={{ fontWeight: 'bold', margin: 0, color: '#00b894' }}>R$ {produto.preco.toFixed(2).replace('.', ',')}</p>
+                        </div>
+                        {/* Botão de + no cartão */}
+                        <button style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
+                          +
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1273,7 +1589,333 @@ function App() {
           </main>
         </div>
       )}
+      {/* ========================================== */}
+      {/* MODAL DE PRODUTO (POP-UP)                    */}
+      {/* ========================================== */}
+      {produtoSelecionado && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 99999, // Um zIndex bem alto garante que fique por cima de tudo
+          display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '15px', padding: '40px',
+            width: '750px', maxWidth: '90%', display: 'flex', gap: '30px', position: 'relative',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }}>
+            
+            {/* Botão Fechar (X vermelho) */}
+            <span 
+              onClick={() => setProdutoSelecionado(null)}
+              style={{
+                position: 'absolute', top: '15px', right: '20px', color: '#ff3b3b', 
+                fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              X
+            </span>
 
+            {/* Esquerda: Imagem do Produto */}
+            <div style={{ width: '320px', height: '320px', backgroundColor: '#aaa', borderRadius: '15px', overflow: 'hidden' }}>
+              <img src={produtoSelecionado.imagem} alt={produtoSelecionado.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
+            {/* Direita: Detalhes do Produto */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              
+              <h2 style={{ fontSize: '1.4rem', margin: '0 0 10px 0', textAlign: 'center', color: '#000', fontWeight: 'bold' }}>
+                *{produtoSelecionado.nome}*
+              </h2>
+              <p style={{ color: '#555', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '500' }}>
+                Descrição do produto
+              </p>
+              <h3 style={{ fontSize: '1.4rem', color: '#555', margin: '0 0 20px 0' }}>
+                R${produtoSelecionado.preco.toFixed(2).replace('.', ',')}
+              </h3>
+
+              {/* Caixa de Informações da Loja */}
+              <div style={{ border: '2px solid #aaa', borderRadius: '8px', padding: '10px 15px', marginBottom: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #ccc', paddingBottom: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 'bold', color: '#555' }}>Nome da loja</span>
+                  <span style={{ color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>*Avaliação*</span>
+                </div>
+                <div style={{ color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  *Distancia*
+                </div>
+              </div>
+
+              {/* Campo de Comentários */}
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555', fontSize: '1rem' }}>
+                  Algum Comentario?
+                </label>
+                <textarea 
+                  placeholder="EX: Tirar o coco ralado, paçoca, amendoim"
+                  style={{
+                    width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #aaa',
+                    resize: 'none', height: '60px', fontFamily: 'inherit', boxSizing: 'border-box',
+                    fontSize: '0.95rem', fontWeight: 'bold', color: '#555'
+                  }}
+                />
+              </div>
+              
+              <p style={{ color: '#ff3b3b', fontSize: '0.9rem', textAlign: 'right', margin: '0 0 15px 0', cursor: 'pointer', fontWeight: 'bold' }}>
+                Denunciar item
+              </p>
+
+              {/* Controles de Quantidade e Botão Adicionar */}
+              <div style={{ display: 'flex', gap: '15px', marginTop: 'auto' }}>
+                
+                {/* Botões + e - */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  border: '2px solid #ff3b3b', borderRadius: '8px', padding: '10px 15px', width: '130px'
+                }}>
+                  {/* Sinal de MAIS (Aumenta a quantidade) */}
+                  <span 
+                    onClick={() => setQuantidadeProduto(q => q + 1)} 
+                    style={{ color: '#ff3b3b', fontSize: '1.6rem', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                  >+</span>
+                  
+                  <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ff3b3b', userSelect: 'none' }}>
+                    {quantidadeProduto}
+                  </span>
+                  
+                  {/* Sinal de MENOS (Diminui a quantidade, mas não deixa passar de 1) */}
+                  <span 
+                    onClick={() => setQuantidadeProduto(q => Math.max(1, q - 1))} 
+                    style={{ color: '#ff3b3b', fontSize: '1.6rem', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                  >-</span>
+                </div>
+
+                {/* Botão Adicionar ao Carrinho */}
+                <button 
+                  onClick={() => {
+                    // Adiciona o produto atual na lista do carrinho e guarda a loja junto
+                    setItensCarrinho([...itensCarrinho, { 
+                      ...produtoSelecionado, 
+                      quantidade: quantidadeProduto,
+                      lojaNome: lojaSelecionada.nome 
+                    }]);
+                    setProdutoSelecionado(null); // Fecha o pop-up
+                  }}
+                  style={{
+                    flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '8px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px',
+                    fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer'
+                  }}
+                >
+                  <span>Adicionar</span>
+                  <span>R$ {(produtoSelecionado.preco * quantidadeProduto).toFixed(2).replace('.', ',')}</span>
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* MODAL DE CADASTRO DE ENDEREÇO (4 PASSOS)     */}
+      {/* ========================================== */}
+      {modalEnderecoAberto && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 99999,
+          display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '15px', padding: '40px',
+            width: '500px', maxWidth: '90%', display: 'flex', flexDirection: 'column', position: 'relative',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }}>
+            
+            {/* Botão Fechar */}
+            <span 
+              onClick={() => setModalEnderecoAberto(false)}
+              style={{ position: 'absolute', top: '15px', right: '20px', color: '#ff3b3b', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              X
+            </span>
+
+            {/* Mascote no Topo */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <img src={imgFormigaDormindo} alt="Mascote Localização" style={{ height: '80px' }} />
+            </div>
+
+            {/* --- PASSO 1: BUSCAR ENDEREÇO --- */}
+            {passoEndereco === 1 && (
+              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>Onde você quer receber seu pedido ?</h3>
+                
+                <div style={{ backgroundColor: '#f0f0f0', borderRadius: '8px', padding: '12px 15px', display: 'flex', alignItems: 'center', marginBottom: '30px' }}>
+                  <span style={{ color: '#ff4d6d', marginRight: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>🔍</span>
+                  <input type="text" placeholder="Buscar endereço e numero" style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', width: '100%', color: '#ff4d6d', fontWeight: 'bold', fontSize: '1rem' }} />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {[1, 2, 3].map((item, index) => (
+                    <div 
+                      key={item} 
+                      onClick={() => setPassoEndereco(2)} // Vai pro passo 2 ao clicar
+                      style={{ border: '1px solid #e0e0e0', borderRadius: '8px', padding: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', transition: 'border 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ff4d6d'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e0e0e0'}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>{index === 0 ? '🏠' : '📄'}</span> 
+                      <span style={{ color: '#ff4d6d', fontWeight: 'bold', fontSize: '1rem' }}>Endereço salvo</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* --- PASSO 2: INFORMAR NÚMERO --- */}
+            {passoEndereco === 2 && (
+              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.2rem' }}>Informe seu numero do endereço</h3>
+                <p style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: '20px', fontSize: '1rem' }}>Endereço informado anterior mente</p>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="informe o numero" 
+                    style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '15px', width: '250px', textAlign: 'center', fontSize: '1.1rem', marginBottom: '15px' }} 
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Não possuí numero</label>
+                    <input type="checkbox" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                  </div>
+                </div>
+
+                <button onClick={() => setPassoEndereco(3)} style={{ width: '100%', backgroundColor: '#ff4d6d', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
+                  Buscar com numero
+                </button>
+              </div>
+            )}
+
+{/* --- PASSO 3: CONFIRMAR NO MAPA (PREPARADO PARA API) --- */}
+            {passoEndereco === 3 && (
+              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.4rem', fontWeight: 'bold' }}>Endereço</h3>
+                
+                {/* 📍 CONTAINER DO MAPA (A API vai entrar exatamente nesta div) */}
+                <div style={{ 
+                  width: '100%', 
+                  height: '250px', 
+                  backgroundColor: '#aaa', // Cor cinza do mockup
+                  borderRadius: '15px', 
+                  marginBottom: '30px', 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  overflow: 'hidden' 
+                }}>
+                  
+                  {/* Ícone de Imagem (Placeholder temporário) */}
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+
+                  {/* FUTURA INTEGRAÇÃO: 
+                      É aqui dentro que você vai colocar o componente do mapa real depois.
+                      Exemplo: <GoogleMap center={localizacao} zoom={15} /> 
+                  */}
+
+                </div>
+
+                <button 
+                  onClick={() => setPassoEndereco(4)} 
+                  style={{ 
+                    width: '100%', backgroundColor: '#ff4d6d', color: '#fff', 
+                    border: 'none', borderRadius: '10px', padding: '15px', 
+                    fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(255, 77, 109, 0.2)'
+                  }}>
+                  Confirmar localização
+                </button>
+              </div>
+            )}
+
+            {/* --- PASSO 4: COMPLEMENTO E FAVORITAR --- */}
+            {passoEndereco === 4 && (
+              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '5px', fontSize: '1.4rem', fontWeight: 'bold' }}>Endereço</h3>
+                <p style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '30px', color: '#000' }}>
+                  Endereço cadastrado | Bairro | Estado
+                </p>
+                
+                <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ color: '#999', fontWeight: 'bold', display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Numero</label>
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ccc', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ color: '#999', fontWeight: 'bold', display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Complemento</label>
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ccc', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '30px' }}>
+                  <label style={{ color: '#999', fontWeight: 'bold', display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Ponto de referencia</label>
+                  <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ccc', boxSizing: 'border-box' }} />
+                </div>
+
+                <label style={{ color: '#999', fontWeight: 'bold', display: 'block', marginBottom: '10px', fontSize: '0.9rem' }}>Favoritar como</label>
+                
+                {/* BOTÕES DE FAVORITAR COM SELEÇÃO */}
+                <div style={{ display: 'flex', gap: '15px', marginBottom: '40px' }}>
+                  <button 
+                    onClick={() => setTipoFavorito('casa')}
+                    style={{ 
+                      flex: 1, padding: '12px', borderRadius: '8px', 
+                      border: tipoFavorito === 'casa' ? '2px solid #ff4d6d' : '1px solid #ccc', 
+                      backgroundColor: tipoFavorito === 'casa' ? '#fff0f3' : '#fff', 
+                      color: tipoFavorito === 'casa' ? '#ff4d6d' : '#777', 
+                      fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🏠 Casa
+                  </button>
+                  <button 
+                    onClick={() => setTipoFavorito('trabalho')}
+                    style={{ 
+                      flex: 1, padding: '12px', borderRadius: '8px', 
+                      border: tipoFavorito === 'trabalho' ? '2px solid #ff4d6d' : '1px solid #ccc', 
+                      backgroundColor: tipoFavorito === 'trabalho' ? '#fff0f3' : '#fff', 
+                      color: tipoFavorito === 'trabalho' ? '#ff4d6d' : '#777', 
+                      fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📄 Trabalho
+                  </button>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setModalEnderecoAberto(false);
+                    // No futuro, ao clicar aqui, você também vai disparar a função de salvar no backend!
+                  }} 
+                  style={{ 
+                    width: '100%', backgroundColor: '#ff4d6d', color: '#fff', 
+                    border: 'none', borderRadius: '10px', padding: '15px', 
+                    fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(255, 77, 109, 0.2)'
+                  }}
+                >
+                  Confirmar localização
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* ========================================== */}
       {/* TELA DE CADASTRO */}
       {/* ========================================== */}
