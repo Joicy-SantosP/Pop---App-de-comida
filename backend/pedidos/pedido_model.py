@@ -40,7 +40,7 @@ class Pedido(db.Model):
     total = db.Column(db.Float, default=0.0, nullable=False)
 
     
-    restaurante = db.relationship('Restaurante', back_populates='pedidos')
+    restaurante = db.relationship('Restaurantes', back_populates='pedidos')
     
     # Revisar arquitetura: um pedido tem VÁRIOS itens. Se deletar o pedido, deleta os itens junto
     itens = db.relationship('ItemPedido', back_populates='pedido', cascade="all, delete-orphan")

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from .pedido_model import criar_carrinho, adicionar_item_ao_carrinho, Pedidos
+from .pedido_model import criar_carrinho, adicionar_item_ao_carrinho, Pedido
 from config import db
 
 pedidos_blueprint = Blueprint('pedidos', __name__)
@@ -29,7 +29,7 @@ def adicionar_item(pedido_id):
 # rota cancelar
 @pedidos_blueprint.route("/pedidos/<int:id>/cancelar", methods=["PUT"])
 def cancelar_pedido(id):
-    pedido = db.session.get(Pedidos, id)
+    pedido = db.session.get(Pedido, id)
 
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
@@ -45,3 +45,10 @@ def cancelar_pedido(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": "Erro ao cancelar pedido", "detalhes": str(e)}), 500
+    
+@pedidos_blueprint.route('/pedidos/<int:id>/forçar-pronto', methods=['PATCH']) #foi só para teste, mative para caso precise novamente, mas não é necessária e não atrapalha em nada
+def forcar_pronto(id):
+    pedido = db.session.get(Pedido, id)
+    pedido.status = 'Pronto'
+    db.session.commit()
+    return jsonify({"mensagem": "Status forçado para Pronto!"})

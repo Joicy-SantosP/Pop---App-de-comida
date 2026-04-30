@@ -38,6 +38,6 @@ class Usuario(db.Model):
             'cpf' : self.cpf,
             'email' : self.email,
             'telefone' : self.telefone,
-            'data_nascimento' : self.data_nascimento.isoformat(),
+            'data_nascimento' : self.data_nascimento.isoformat() if self.data_nascimento else None,
         }
     

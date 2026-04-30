@@ -35,6 +35,8 @@ def criar_restaurante():
         numero=dados.get("numero"),
         bairro=dados.get("bairro"),
         endereco=dados.get("endereco"),
+        latitude=dados.get("latitude"),
+        longitude=dados.get("longitude"),
         complemento=dados.get("complemento"),
         imagem=dados.get("imagem")
     )

@@ -25,10 +25,13 @@ class Restaurantes(db.Model):
     email_verified = db.Column(db.Boolean, default=False)
     
     # chave estrangeira
-    pedidos = db.relationship('Pedidos', back_populates='restaurante')
+    pedidos = db.relationship('Pedido', back_populates='restaurante')
     produtos = db.relationship('Produto', backref='restaurante', lazy=True)
     
-    def __init__(self, email, celular, nome, cnpj, cep, especialidade, cpf, numero, bairro, endereco,imagem=None, complemento=None, faturamento=0.0, aberto=False):
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    
+    def __init__(self, email, celular, nome, cnpj, cep, especialidade, cpf, numero, bairro, endereco, latitude, longitude,imagem=None, complemento=None, faturamento=0.0, aberto=False):
         self.email = email
         self.celular = celular
         self.cep = cep
@@ -41,6 +44,8 @@ class Restaurantes(db.Model):
         self.imagem = imagem
         self.nome = nome
         self.cnpj = cnpj
+        self.latitude = latitude
+        self.longitude = longitude
         self.faturamento = faturamento
         self.aberto = aberto
         
@@ -59,6 +64,8 @@ class Restaurantes(db.Model):
             'imagem': self.imagem,
             'nome': self.nome,
             'cnpj': self.cnpj,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
             'faturamento': self.faturamento,
             'aberto': self.aberto
         }
