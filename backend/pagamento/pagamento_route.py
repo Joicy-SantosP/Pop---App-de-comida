@@ -4,7 +4,11 @@ from flask import Blueprint, request, jsonify
 from pedidos.pedido_model import Pedido
 from .pagamento_model import Pagamento, db, calcular_distancia_km
 from endereco.endereco_model import Endereco
+from restaurantes.restaurante_model import Restaurantes
 from dotenv import load_dotenv
+from fpdf import FPDF
+from flask_mail import Message, Mail
+from config import mail
 
 load_dotenv()
 
@@ -83,6 +87,30 @@ def checkout():
         
     return jsonify({"erro": "Falha na comunicação com Gateway"}), 400
 
+def enviar_nf_pdf(pedido, email_destino):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(40,10, f"Nota Fiscal - Pedido #{pedido.id}")
+    pdf.ln(10)
+    pdf.set_font("Arial", size=12)
+    
+    for item in pedido.itens:
+        pdf.cell(0,10,f"{item.quantidade}x {item.nome_doce} - R$ {item.preco_unitario}", ln=True)
+        
+    pdf.ln(5)
+    pdf.cell(0,10, f"Total: R$ {pedido.pagamento.total_final}", ln=True)
+    
+    pdf_content = pdf.output(dest='S').encode('latin-1')
+        
+    msg = Message(f"NF do seu pedido Pop Doces #{pedido.id}",
+                  sender = "popdocescontato@gmail.com",
+                  recipients=[email_destino])
+    msg.body = "Olá! Segue em anexo a nota fiscal do seu doce."
+    msg.attach("nota_fiscal.pdf", "application/pdf", pdf_content)
+    
+    mail.send(msg)
+
 @pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
 def verificar_status(id):
     pagamento = Pagamento.query.get_or_404(id)
@@ -98,20 +126,8 @@ def verificar_status(id):
         "total": pagamento.total_final
     })
 
-@pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
-def verificar_status(id):
-    pagamento = Pagamento.query.get_or_404(id)
+    mail.send(msg)
 
-    if pagamento.status == "Aguardando Confirmação" and pagamento.esta_expirado():
-        pagamento.status = "Cancelado"
-        db.session.commit()
-        return jsonify({"status": "Cancelado", "motivo": "Tempo limite para pagamento excedido."})
-
-    return jsonify({
-        "id": pagamento.id,
-        "status": pagamento.status,
-        "total": pagamento.total_final
-    })
 
 @pagamentos_bp.route('/webhooks/mercadopago', methods=['POST'])
 def webhook_mp():
