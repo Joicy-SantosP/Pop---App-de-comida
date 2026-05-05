@@ -98,6 +98,21 @@ def verificar_status(id):
         "total": pagamento.total_final
     })
 
+@pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
+def verificar_status(id):
+    pagamento = Pagamento.query.get_or_404(id)
+
+    if pagamento.status == "Aguardando Confirmação" and pagamento.esta_expirado():
+        pagamento.status = "Cancelado"
+        db.session.commit()
+        return jsonify({"status": "Cancelado", "motivo": "Tempo limite para pagamento excedido."})
+
+    return jsonify({
+        "id": pagamento.id,
+        "status": pagamento.status,
+        "total": pagamento.total_final
+    })
+
 @pagamentos_bp.route('/webhooks/mercadopago', methods=['POST'])
 def webhook_mp():
     data_id = request.args.get('data.id') or request.json.get('data', {}).get('id')
@@ -114,10 +129,17 @@ def webhook_mp():
             if status_real == "approved":
                 pagamento.status = "Pagamento Confirmado"
                 pagamento.pedido.status = "Em Preparação"
+                email_do_usuario = pagamento.pedido.usuario.email
+                try:
+                    enviar_nf_pdf(pagamento.pedido, email_do_usuario)
+                except Exception as e:
+                    print(f"Erro ao enviar email: {e}")
             elif status_real in ["rejected", "cancelled"]:
                 pagamento.status = "Cancelado"
                 pagamento.pedido.status = "Cancelado"
             
+            pagamento.pedido.gerar_codigo_entrega()
+            pagamento.pedido.iniciar_simulacao()
             db.session.commit()
 
     return "", 200
