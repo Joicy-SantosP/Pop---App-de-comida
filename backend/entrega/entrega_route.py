@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from config import db
+from datetime import datetime
 from pedidos.pedido_model import Pedido
 from entrega.entrega_model import Entrega
 from endereco.endereco_model import Endereco
@@ -44,16 +45,24 @@ def despachar_pedido(pedido_id):
 
 @entrega_bp.route('/pedido/<int:pedido_id>/confirmar-entrega', methods=['PATCH'])
 def confirmar_entrega(pedido_id):
+    data = request.json
+    codigo_informado = data.get('codigo_verificacao')
+    
     pedido = db.session.get(Pedido, pedido_id)
 
     if not pedido or pedido.status != "Em Trânsito":
         return jsonify({"erro": "O pedido não está em rota de entrega"}), 400
 
+    if codigo_informado != pedido.codigo_confirmacao:
+        return jsonify({"erro": "Código de entrega incorreto! Verifique com o cliente."}), 403
+
     try:
         pedido.status = "Entregue"
-        
+        if pedido.detalhes_entrega:
+            pedido.detalhes_entrega.data_conclusao = datetime.utcnow()
+            
         db.session.commit()
-        return jsonify({"mensagem": "Status atualizado: Entregue"}), 200
+        return jsonify({"mensagem": "Código verificado! Entrega confirmada."}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": str(e)}), 500

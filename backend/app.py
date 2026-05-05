@@ -9,10 +9,14 @@ from endereco.endereco_route import endereco_bp
 from usuarios.auth.social_auth_route import social_auth_bp
 from pagamento.pagamento_route import pagamentos_bp
 from entrega.entrega_route import entrega_bp
-
+from apscheduler.schedulers.background import BackgroundScheduler
+from pedidos.pedido_service import limpar_carrinhos_antigos
 
 from restaurantes.restaurante_model import Restaurantes
 from pedidos.pedido_model import ItemPedido
+
+
+
 
 
 app.config["JWT_SECRET_KEY"] = "chave_super_secreta"
@@ -32,6 +36,24 @@ app.register_blueprint(entrega_bp)
 @app.route("/", methods=['GET'])
 def home():
     return "API POP Doces funcionando!"
+
+
+if __name__ == '__main__':
+
+    with app.app_context():
+
+        db.create_all()
+
+
+    scheduler = BackgroundScheduler()
+
+    scheduler.add_job(
+        func=limpar_carrinhos_antigos,
+        trigger="interval",
+        hours=24
+    )
+
+    scheduler.start()
 
 if __name__ == '__main__':
     with app.app_context():

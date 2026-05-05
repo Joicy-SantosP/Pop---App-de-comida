@@ -30,8 +30,8 @@ class Pagamento(db.Model):
     def __init__(self, pedido_id, metodo, subtotal, taxa_entrega):
         self.pedido_id = pedido_id
         self.metodo = metodo
-        self.subtotal = subtotal
-        self.taxa_entrega = taxa_entrega
+        self.subtotal = float(subtotal) if subtotal is not None else 0.0
+        self.taxa_entrega = float(taxa_entrega) if taxa_entrega is not None else 0.0
         self.total_final = self.subtotal + self.taxa_entrega
 
     
@@ -70,4 +70,3 @@ def calcular_distancia_km(lat1,lon1,lat2,lon2):
 
     distancia = R * c
     return round(distancia, 2)
-    

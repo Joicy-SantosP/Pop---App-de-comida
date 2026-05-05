@@ -28,6 +28,7 @@ class Restaurantes(db.Model):
     pedidos = db.relationship('Pedido', back_populates='restaurante')
     produtos = db.relationship('Produto', backref='restaurante', lazy=True)
     
+    #importante para o calculo da taxa de entrega
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     
@@ -69,5 +70,3 @@ class Restaurantes(db.Model):
             'faturamento': self.faturamento,
             'aberto': self.aberto
         }
-
-

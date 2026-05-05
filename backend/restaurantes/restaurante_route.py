@@ -1,13 +1,15 @@
-# restaurante_routes.py
 from flask import  Blueprint, request, jsonify
 from config import db  
 import random  
+from geopy.geocoders import Nominatim
 from .restaurante_model import Restaurantes
 from datetime import datetime,timedelta
 from .services.emailRestaurante_service import send_email
 
 
 restaurantes_blueprint = Blueprint('restaurantes', __name__)
+
+geolocator = Nominatim(user_agent="pop_doces_endereco")
 
 class RestauranteNaoIdentificado(Exception):
     pass
@@ -23,6 +25,20 @@ def criar_restaurante():
 
     if not email:
         return jsonify({"erro": "Email é obrigatório"}), 400
+    
+    endereco_completo = f"{dados.get('endereco')}, {dados.get('numero', '')}, {dados.get('bairro')}, Brasil"
+    
+    try:
+        location = geolocator.geocode(endereco_completo)
+        
+        if location:
+            latitude_automatica = location.latitude
+            longitude_automatica = location.longitude
+        else:
+            return jsonify({"erro": "Não foi possivel encontrar as coordenadas para geolocalização"}), 400
+        
+    except Exception as e:
+        return jsonify({"erro": f"Erro no serviço de geolocalização: {str(e)}"}), 500
 
     restaurante = Restaurantes(
         email=email,
@@ -35,8 +51,8 @@ def criar_restaurante():
         numero=dados.get("numero"),
         bairro=dados.get("bairro"),
         endereco=dados.get("endereco"),
-        latitude=dados.get("latitude"),
-        longitude=dados.get("longitude"),
+        latitude=latitude_automatica,
+        longitude=longitude_automatica,
         complemento=dados.get("complemento"),
         imagem=dados.get("imagem")
     )
@@ -127,4 +143,3 @@ def deletar_restaurante(id):
     db.session.commit()
 
     return {"mensagem": "Restaurante deletado com sucesso"}, 200
-

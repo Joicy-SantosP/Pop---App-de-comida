@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify
 from .endereco_model import Endereco, db
+from geopy.geocoders import Nominatim
 import requests
 
 endereco_bp = Blueprint('enderecos', __name__)
+
+geolocator = Nominatim(user_agent="pop_doces_endereco")
 
 @endereco_bp.route('/cep/<string:cep_input>', methods=['GET'])
 def buscar_cep(cep_input):
@@ -19,9 +22,24 @@ def buscar_cep(cep_input):
 @endereco_bp.route('/', methods=['POST'])
 def cadastrar_endereco():
     data = request.json
+    
+    endereco_completo = f"{data['logradouro']}, {data.get('numero','')}, {data['bairro']}, {data['cidade']}, {data['estado']}, Brasil"
+    
+    try: 
+        location = geolocator.geocode(endereco_completo)
+        
+        if location:
+            latitude_automatica = location.latitude
+            longitude_automatica = location.longitude
+        else:
+            return jsonify({"erro": "Não foi possivel encontrar as coordenadas para esse endereço"}), 400
+        
+    except Exception as e:
+        return jsonify({"erro": f"Erro no serviço de geolocalização: {str(e)}"}), 500
+        
+    
     if data.get('principal'):
-        Endereco.query.filter_by(usuario_id=data['usuario_id'], principal=True)\
-            .update({"principal": False})
+        Endereco.query.filter_by(usuario_id=data['usuario_id'], principal=True).update({"principal": False})
             
     novo_endereco = Endereco(
         usuario_id = data['usuario_id'],
@@ -34,8 +52,8 @@ def cadastrar_endereco():
         complemento = data.get('complemento'),
         ponto_referencial = data.get('ponto_referencial'),
         rotulo = data.get('rotulo'),
-        latitude = data['latitude'],
-        longitude = data['longitude'],
+        latitude = latitude_automatica,
+        longitude = longitude_automatica,
         principal = data.get('principal', False)
     )
     
