@@ -1134,3 +1134,80 @@
   cursor: pointer;
   font-size: 10px;
 }
+/* Container principal da tela de pagamento */
+.container-pagamento {
+  display: flex;
+  gap: 50px;
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: sans-serif;
+}
+
+.pagamento-coluna-esq {
+  flex: 2;
+}
+
+.pagamento-coluna-dir {
+  flex: 1;
+}
+
+/* Estilos de Abas */
+.abas-simples { display: flex; gap: 30px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+.aba-ativa { color: '#ff3b3b'; font-weight: bold; cursor: pointer; }
+.aba-inativa { color: #aaa; font-weight: bold; cursor: pointer; }
+
+/* Boxes e Cards */
+.box-endereco {
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid #f0f0f0; border-radius: 15px; padding: 20px;
+  background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.icone-mapa-placeholder {
+  width: 50px; height: 50px; background: #eee; border-radius: 10px;
+  display: flex; justify-content: center; align-items: center; font-size: 24px;
+}
+
+.box-tempo {
+  border: 2px solid #333; border-radius: 10px; padding: 15px; flex: 1; cursor: pointer;
+}
+.box-tempo.ativo { border-color: #ff3b3b; }
+.tempo-titulo { margin: 0 0 5px 0; font-weight: bold; }
+.tempo-preco { margin: 0; color: #888; }
+.tempo-preco.verde { color: #2ecc71; font-weight: bold; }
+
+.box-metodo-pagamento {
+  display: flex; align-items: center; gap: 15px;
+  border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin-bottom: 20px;
+}
+
+.box-adicionar-cartao {
+  display: flex; justify-content: space-between; align-items: center;
+  background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn-outline-vermelho {
+  background: transparent; border: 2px solid #ff3b3b; color: #ff3b3b;
+  padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; margin-top: 10px;
+}
+
+.input-cpf {
+  width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 10px;
+  margin-top: 10px; font-size: 1rem;
+}
+
+.btn-fazer-pedido {
+  width: 100%; background: #ff3b3b; color: white; border: none;
+  padding: 18px; border-radius: 10px; font-size: 1.2rem; font-weight: bold;
+  cursor: pointer; margin-top: 30px;
+}
+
+/* Card Resumo na Direita */
+.resumo-pedido-fixo {
+  background: #ffebeb; /* Fundo rosinha claro */
+  padding: 30px; border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(255, 59, 59, 0.1);
+}
+
+.linha-divisoria { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
