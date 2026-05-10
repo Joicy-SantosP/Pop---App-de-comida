@@ -1211,3 +1211,17 @@
 }
 
 .linha-divisoria { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+.btn-opcao-entrega {
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.btn-opcao-entrega:hover {
+    border-color: #ff3b3b;
+}

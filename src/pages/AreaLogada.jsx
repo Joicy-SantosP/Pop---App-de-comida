@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+
 import imgLogo from '../assets/logo_grande.png';
 import imgFormigaDormindo from '../assets/formigadormindo.png';
 import cat1 from '../assets/image-removebg-preview (1).png';
@@ -12,6 +14,11 @@ import bannerCumprido1 from '../assets/Poster Cumprido 1.png';
 import bannerCumprido2 from '../assets/Poster Cumprido 2.png';
 import bannerCumprido3 from '../assets/Poster Cumprido 3.png';
 import bannerCumprido4 from '../assets/Poster Cumprido 4.png';
+import formigaImg from '../assets/Formiguinha pagando.png';
+import imgFormigaComendo from '../assets/formiguinha comendo .png';
+import imgFormigaFeliz from '../assets/formigafeliz.png';
+import imgFormigaPensativa from '../assets/formigapensativa.png';
+import imgFormigaTriste from '../assets/formigatriste.png';
 
 
 function AreaLogada({ 
@@ -29,6 +36,76 @@ function AreaLogada({
     // Dentro do componente, antes do return principal:
 console.log("O componente renderizou! A tela atual é:", telaAtual);
 
+// Simulando a resposta que virá do Banco de Dados/Back-end
+const [dadosEntrega, setDadosEntrega] = useState({
+    rua: "Rua Bastilha 152",
+    cidadeEstado: "Santo Andre - SP",
+    tempoEstimado: "Hoje 33 - 55 min",
+    taxaEntrega: 10.00,
+    isFreteGratis: false // Se mudar para true, a tela deve se adaptar
+});
+
+// Controla qual aba de pagamento está ativa ('site' ou 'entrega')
+const [abaPagamento, setAbaPagamento] = useState('site');
+
+// Controles do Modal de Pagamento
+const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
+const [statusPagamento, setStatusPagamento] = useState('aguardando'); // Pode ser: 'aguardando', 'sucesso' ou 'erro'
+
+// Função que será chamada ao clicar em "Fazer Pedido"
+const handleFazerPedido = () => {
+    // 1. Abre o modal e define a formiga pensativa (aguardando)
+    setModalPagamentoAberto(true);
+    setStatusPagamento('aguardando');
+
+    // =======================================================
+    //  BACK-END INTEGRAÇÃO MERCADO PAGO AQUIIII
+    // =======================================================
+    // Meninas, aqui vocês vão inserir a chamada da API do Mercado Pago.
+    // Assim que a API retornar o status do pagamento, basta atualizar o estado:
+    // 
+    // try {
+    //     const resposta = await api.post('/pagamento-mercado-pago', { carrinho: itensCarrinho });
+    //     if (resposta.aprovado) {
+    //         setStatusPagamento('sucesso');
+    //     } else {
+    //         setStatusPagamento('erro');
+    //     }
+    // } catch (erro) {
+    //     setStatusPagamento('erro');
+    // }
+    // =======================================================
+
+    // 👇 SIMULAÇÃO TEMPORÁRIA DO FRONT-END (Pode apagar quando o back estiver pronto):
+    setTimeout(() => {
+        // Após 3 segundos, ele muda para sucesso. 
+        // Dica: Troque a palavra 'sucesso' por 'erro' aqui para ver a formiga triste!
+        setStatusPagamento('sucesso'); 
+    }, 3000);
+};
+
+// Guarda as informações do pedido que está em andamento
+const [pedidoAtual, setPedidoAtual] = useState(null);
+// Guarda a lista de pedidos que já foram concluídos
+const [pedidosAnteriores, setPedidosAnteriores] = useState([]);
+
+// Função para testar a conclusão do pedido
+const simularEntrega = () => {
+    if (pedidoAtual) {
+        // Cria uma cópia do pedido atual, mas com o status 'Entregue'
+        const pedidoConcluido = { 
+            ...pedidoAtual, 
+            status: 'Entregue 😋',
+            data: new Date().toLocaleDateString('pt-BR') 
+        };
+        
+        // Adiciona esse pedido no topo da lista de pedidos anteriores
+        setPedidosAnteriores([pedidoConcluido, ...pedidosAnteriores]);
+        
+        // Esvazia o "Pedido Atual"
+        setPedidoAtual(null);
+    }
+};
 
   return (
     <>
@@ -105,7 +182,9 @@ console.log("O componente renderizou! A tela atual é:", telaAtual);
                   <h3 className="popup-saudacao">Olá Usuario do POP!</h3>
                   <hr className="popup-linha" />
                   <div className="popup-opcoes">
-                    <button className="btn-opcao"><span className="icone">🧾</span> Pedidos</button>
+                    <button className="btn-opcao" onClick={() => { setTelaAtual('pedidos'); setMenuUsuarioAberto(false); }}>
+                    <span className="icone">🧾</span> Pedidos
+                  </button>
                     <button className="btn-opcao"><span className="icone">👤</span> Meus dados</button>
                     <button className="btn-opcao" onClick={() => { setTelaAtual('cadastro'); setMenuUsuarioAberto(false); }}>
                       <span className="icone">📝</span> Cadastrar
@@ -268,54 +347,97 @@ console.log("O componente renderizou! A tela atual é:", telaAtual);
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div className="icone-mapa-placeholder">🗺️</div>
                         <div>
-                            <p style={{ fontWeight: 'bold', margin: 0 }}>Rua Bastilha 152</p>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Santo Andre - SP</p>
+                            {/* Antes era "Rua Bastilha 152" */}
+                            <p style={{ fontWeight: 'bold', margin: 0 }}>{dadosEntrega.rua}</p>
+                            {/* Antes era "Santo Andre - SP" */}
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{dadosEntrega.cidadeEstado}</p>
                         </div>
                         </div>
                         <span style={{ color: '#ff3b3b', cursor: 'pointer', fontWeight: 'bold' }}>Trocar</span>
                     </div>
 
                     {/* Box de Tempo de Entrega */}
-                    <h4 style={{ marginTop: '20px' }}>Hoje 33 - 55 min</h4>
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                        <div className="box-tempo ativo">
-                        <p className="tempo-titulo">Hoje 33 - 55 min</p>
-                        <p className="tempo-preco">R$ 10,00</p>
+                        <h4 style={{ marginTop: '20px' }}>{dadosEntrega.tempoEstimado}</h4>
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                            <div className="box-tempo ativo">
+                                <p className="tempo-titulo">{dadosEntrega.tempoEstimado}</p>
+                                <p className="tempo-preco">
+                                    {/* Lógica: Se o frete não for grátis, mostra o valor. Se for, mostra "Grátis" */}
+                                    {dadosEntrega.isFreteGratis 
+                                        ? "Grátis" 
+                                        : `R$ ${dadosEntrega.taxaEntrega.toFixed(2).replace('.', ',')}`}
+                                </p>
+                            </div>
+                            {/* ... (o outro box de retirada pode seguir a mesma lógica) ... */}
                         </div>
-                        <div className="box-tempo">
-                        <p className="tempo-titulo">Hoje 33 - 55 min</p>
-                        <p className="tempo-preco verde">Gratis</p>
-                        </div>
-                    </div>
 
                     <hr className="linha-divisoria" />
 
                     {/* Abas de Pagamento */}
-                    <div className="abas-simples" style={{ marginTop: '20px' }}>
-                        <span className="aba-ativa">Pague pelo Site</span>
-                        <span className="aba-inativa">Pague na Entrega</span>
-                    </div>
+<div className="abas-simples" style={{ marginTop: '20px' }}>
+    <span 
+        className={abaPagamento === 'site' ? "aba-ativa" : "aba-inativa"} 
+        onClick={() => setAbaPagamento('site')}
+        style={{ cursor: 'pointer' }}
+    >
+        Pague pelo Site
+    </span>
+    <span 
+        className={abaPagamento === 'entrega' ? "aba-ativa" : "aba-inativa"} 
+        onClick={() => setAbaPagamento('entrega')}
+        style={{ cursor: 'pointer' }}
+    >
+        Pague na Entrega
+    </span>
+</div>
 
-                    {/* Box do PIX */}
-                    <div className="box-metodo-pagamento">
-                        <span style={{ fontSize: '2rem', color: '#20b2aa' }}>❖</span>
-                        <div>
-                        <p style={{ fontWeight: 'bold', margin: 0 }}>Pague com o pix</p>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Use o QR code ou codigo copia e cola</p>
-                        </div>
-                    </div>
+{/* === CONTEÚDO DINÂMICO DAS ABAS === */}
+{abaPagamento === 'site' ? (
+    
+    // --- CONTEÚDO DA ABA: PAGUE PELO SITE ---
+    <>
+        {/* Box do PIX */}
+        <div className="box-metodo-pagamento">
+            <span style={{ fontSize: '2rem', color: '#20b2aa' }}>❖</span>
+            <div>
+                <p style={{ fontWeight: 'bold', margin: 0 }}>Pague com o pix</p>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Use o QR code ou codigo copia e cola</p>
+            </div>
+        </div>
 
-                    {/* Box de Adicionar Cartão */}
-                    <div className="box-adicionar-cartao">
-                        <div>
-                        <h3 style={{ margin: '0 0 10px 0' }}>Adicione um cartão no POP!</h3>
-                        <p style={{ color: '#666', fontSize: '0.9rem' }}>É seguro pratico e você não perde nenhum minuto</p>
-                        <button className="btn-outline-vermelho">Adicione um cartão</button>
-                        </div>
-                        {/* Você precisará importar a imagem da formiguinha com a maquininha */}
-                        <img src="caminho_da_formiga_cartao.png" alt="Formiga pagando" style={{ width: '120px' }} />
-                    </div>
+        {/* Box de Adicionar Cartão */}
+        <div className="box-adicionar-cartao">
+            <div>
+                <h3 style={{ margin: '0 0 10px 0' }}>Adicione um cartão no POP!</h3>
+                <p style={{ color: '#666', fontSize: '0.9rem' }}>É seguro pratico e você não perde nenhum minuto</p>
+                <button className="btn-outline-vermelho">Adicione um cartão</button>
+            </div>
+            {/* Formiguinha adicionada aqui na aba do site! */}
+            <img src={formigaImg} alt="Formiga pagando" style={{ width: '120px' }} />
+        </div>
+    </>
 
+) : (
+
+    // --- CONTEÚDO DA ABA: PAGUE NA ENTREGA ---
+    <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+        
+        {/* Coluna 1: Dinheiro, Crédito, Débito */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
+            <button className="btn-opcao-entrega">💵 Dinheiro</button>
+            <button className="btn-opcao-entrega">💳 Credito</button>
+            <button className="btn-opcao-entrega">💳 Debito</button>
+        </div>
+        
+        {/* Coluna 2: Vale Alimentação e Formiguinha */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1, alignItems: 'center' }}>
+            <button className="btn-opcao-entrega" style={{ width: '100%' }}>💳 Vale Alimentação</button>
+            {/* Formiguinha mantida aqui na aba de entrega! */}
+            <img src={formigaImg} alt="Formiga pagando na maquininha" style={{ width: '140px', marginTop: '10px' }} />
+        </div>
+
+    </div>
+)}
                     {/* CPF / CNPJ */}
                     <div style={{ marginTop: '20px' }}>
                         <label style={{ color: '#ff3b3b', fontWeight: 'bold' }}>CPF/CNPJ na nota</label>
@@ -323,43 +445,94 @@ console.log("O componente renderizou! A tela atual é:", telaAtual);
                     </div>
 
                     {/* Botão Final */}
-                    <button className="btn-fazer-pedido">Fazer Pedido</button>
+                    <button className="btn-fazer-pedido" onClick={handleFazerPedido}>
+                        Fazer Pedido
+                    </button>
                     </div>
 
                     {/* COLUNA DIREITA: Resumo do Pedido (Mesmo visual do carrinho) */}
-                    <div className="pagamento-coluna-dir">
-                    <div className="resumo-pedido-fixo">
-                        <p className="texto-cinza">Seu pedido em <span style={{ color: '#ff3b3b', float: 'right', fontSize: '0.8rem' }}>Ver o cardápio</span></p>
-                        <h4 className="nome-restaurante" style={{ color: '#a82424', marginBottom: '20px' }}>Nome do restaurante Nome do restaurante</h4>
-                        
-                        <hr className="linha-divisoria" />
-                        
-                        <div className="item-pedido">
+<div className="pagamento-coluna-dir" style={{ minWidth: '380px', width: '35%' }}>
+    <div className="resumo-pedido-fixo">
+        <p className="texto-cinza" style={{ color: '#999', fontSize: '0.9rem', marginBottom: '5px' }}>
+            Seu pedido em <span 
+                style={{ color: '#ff3b3b', float: 'right', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
+                onClick={() => setTelaAtual('tela-restaurante')}
+            >
+                Ver o cardápio
+            </span>
+        </p>
+        
+        {/* Puxa o nome do restaurante do primeiro item do carrinho, se houver */}
+        <h4 className="nome-restaurante" style={{ color: '#a82424', marginBottom: '20px', fontSize: '1.2rem', margin: '0 0 15px 0' }}>
+            {itensCarrinho.length > 0 ? itensCarrinho[0].lojaNome : "Restaurante POP!"}
+        </h4>
+        
+        <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', marginBottom: '15px' }} />
+        
+        {/* LISTA DINÂMICA DE ITENS */}
+        <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
+            {itensCarrinho.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>Sua sacola está vazia.</p>
+            ) : (
+                itensCarrinho.map((item, index) => (
+                    <div className="item-pedido" key={index} style={{ marginBottom: '15px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#a82424' }}>
-                            <span>1 x Titulo do pedido</span>
-                            <span style={{ color: '#333' }}>R$ 0,00</span>
+                            <span>{item.quantidade} x {item.nome}</span>
+                            <span style={{ color: '#333' }}>R$ {(item.preco * item.quantidade).toFixed(2).replace('.', ',')}</span>
                         </div>
-                        <p style={{ color: '#888', fontSize: '0.9rem', margin: '5px 0' }}>Descrição do pedido completa</p>
+                        <p style={{ color: '#888', fontSize: '0.9rem', margin: '5px 0' }}>{item.descricao}</p>
+                        
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '10px' }}>
                             <span style={{ color: '#3498db' }}>Item promocional</span>
                             <div style={{ display: 'flex', gap: '10px', color: '#ff3b3b', fontWeight: 'bold' }}>
-                            <span style={{ cursor: 'pointer' }}>Editar</span>
-                            <span style={{ cursor: 'pointer', color: '#333' }}>Remover</span>
+                                <span style={{ cursor: 'pointer' }}>Editar</span>
+                                <span 
+                                    style={{ cursor: 'pointer', color: '#333' }}
+                                    onClick={() => {
+                                        // Lógica para remover o item direto da tela de pagamento
+                                        const novoCarrinho = [...itensCarrinho];
+                                        novoCarrinho.splice(index, 1);
+                                        setItensCarrinho(novoCarrinho);
+                                    }}
+                                >
+                                    Remover
+                                </span>
                             </div>
                         </div>
-                        </div>
-                        
-                        <hr className="linha-divisoria" />
-                        
-                        <div className="linha-resumo"><span className="texto-cinza">SubTotal</span><span>R$ 10,00</span></div>
-                        <div className="linha-resumo"><span className="texto-cinza">Taxa de entrega</span><span style={{ color: '#2ecc71', fontWeight: 'bold' }}>Gratis</span></div>
-                        
-                        <div className="linha-resumo" style={{ fontWeight: 'bold', fontSize: '1.2rem', marginTop: '20px' }}>
-                        <span>Total</span><span>R$ 10,00</span>
-                        </div>
+                        <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '15px 0 0 0' }} />
                     </div>
-                    </div>
-
+                ))
+            )}
+        </div>
+        
+        {/* RESUMO DE VALORES (CÁLCULO AUTOMÁTICO) */}
+        <div style={{ marginTop: '15px' }}>
+            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: '#666' }}>
+                <span className="texto-cinza">SubTotal</span>
+                <span style={{ fontWeight: 'bold', color: '#333' }}>
+                    R$ {itensCarrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0).toFixed(2).replace('.', ',')}
+                </span>
+            </div>
+            
+            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', color: '#666' }}>
+                <span className="texto-cinza">Taxa de entrega</span>
+                <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>
+                    {dadosEntrega.isFreteGratis ? "Grátis" : `R$ ${dadosEntrega.taxaEntrega.toFixed(2).replace('.', ',')}`}
+                </span>
+            </div>
+            
+            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '20px', color: '#000' }}>
+                <span>Total</span>
+                <span>
+                    R$ {(
+                        itensCarrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0) + 
+                        (dadosEntrega.isFreteGratis ? 0 : dadosEntrega.taxaEntrega)
+                    ).toFixed(2).replace('.', ',')}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
                 </div>
                 )}
             {/* --- DASHBOARD --- */}
@@ -522,17 +695,129 @@ console.log("O componente renderizou! A tela atual é:", telaAtual);
 
               </div>
             )}
-            {/* --- PEDIDOS --- */}
+            
             {telaAtual === 'pedidos' && (
-              <section className="secao-sacola">
-                <div style={{ marginBottom: '20px' }}>
-                  <span onClick={() => setTelaAtual('dashboard')} style={{ cursor: 'pointer', color: '#ff3b3b', fontWeight: 'bold', fontSize: '1.1rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    ⬅️ Voltar
-                  </span>
+                <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+                    <h2 style={{ color: '#ff3b3b', marginBottom: '20px', fontSize: '1.8rem' }}>Meus Pedidos</h2>
+                    
+                    {/* Container Principal (Fundo rosinha claro) */}
+                    <div style={{ backgroundColor: '#fff5f6', borderRadius: '15px', padding: '40px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                        
+                        {/* ========================================== */}
+                        {/* 1. SESSÃO DO PEDIDO ATUAL                  */}
+                        {/* ========================================== */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <h3 style={{ color: '#a82424', margin: 0, fontSize: '1.4rem' }}>Pedido atual</h3>
+                            <img src={imgFormigaComendo} alt="Formiga comendo" style={{ width: '90px', marginTop: '-30px' }} />
+                        </div>
+
+                        {pedidoAtual ? (
+                            <div style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginTop: '10px' }}>
+                                <div style={{ display: 'flex', gap: '25px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
+                                        <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                                            <span style={{ fontSize: '3rem' }}>🏞️</span>
+                                        </div>
+                                        <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
+                                            R$ {pedidoAtual.total?.toFixed(2).replace('.', ',') || "0,00"}
+                                        </span>
+                                    </div>
+
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
+                                                *{pedidoAtual.itens[0]?.lojaNome || "Tudo de bom doces"}*
+                                            </span>
+                                        </div>
+                                        
+                                        {pedidoAtual.itens.map((item, index) => (
+                                            <div key={index} style={{ marginBottom: '10px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome}</span>
+                                                    <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <hr style={{ border: 'none', borderTop: '2px solid #fff', margin: '20px 0' }} />
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem' }}>
+                                    <span>Status: <span style={{ color: '#e67e22' }}>{pedidoAtual.status}</span></span>
+                                    <span>Data: {pedidoAtual.data}</span>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+                                    <button style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                                        Acompanhar entrega
+                                    </button>
+                                    
+                                    {/* 👇 BOTÃO DE TESTE PARA SIMULAR A ENTREGA */}
+                                    <button 
+                                        onClick={simularEntrega}
+                                        style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                    >
+                                        ✅ TESTE: Concluir Pedido
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ padding: '30px', textAlign: 'center', backgroundColor: '#fbeceb', borderRadius: '15px', marginTop: '10px' }}>
+                                <p style={{ color: '#888', fontWeight: 'bold', fontSize: '1.1rem' }}>Você não tem nenhum pedido em andamento no momento.</p>
+                            </div>
+                        )}
+
+                        {/* ========================================== */}
+                        {/* 2. SESSÃO DE PEDIDOS ANTERIORES            */}
+                        {/* ========================================== */}
+                        <div style={{ marginTop: '40px' }}>
+                            <h3 style={{ color: '#a82424', margin: '0 0 20px 0', fontSize: '1.4rem' }}>Pedidos anteriores</h3>
+
+                            {pedidosAnteriores.length > 0 ? (
+                                pedidosAnteriores.map((pedidoAntigo, index) => (
+                                    <div key={index} style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginBottom: '15px' }}>
+                                        <div style={{ display: 'flex', gap: '25px' }}>
+                                            
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
+                                                <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                                                    <span style={{ fontSize: '3rem' }}>✅</span>
+                                                </div>
+                                                <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
+                                                    R$ {pedidoAntigo.total?.toFixed(2).replace('.', ',')}
+                                                </span>
+                                            </div>
+
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
+                                                    *{pedidoAntigo.itens[0]?.lojaNome || "Tudo de bom doces"}*
+                                                </span>
+                                                
+                                                {pedidoAntigo.itens.map((item, idx) => (
+                                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome}</span>
+                                                        <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
+                                                    </div>
+                                                ))}
+
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem', marginTop: 'auto' }}>
+                                                    <span>Status: <span style={{ color: '#27ae60' }}>{pedidoAntigo.status}</span></span>
+                                                    <span>Data: {pedidoAntigo.data}</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontWeight: 'bold' }}>
+                                    Nenhum pedido anterior encontrado.
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
                 </div>
-                <h3 className="titulo-sacola">Sua Sacolinha 🛒</h3>
-                {/* ... conteúdo da sacola que já estava aqui ... */}
-              </section>
             )}
 
             {/* --- NOVA TELA: DETALHES DO RESTAURANTE --- */}
@@ -969,8 +1254,75 @@ console.log("O componente renderizou! A tela atual é:", telaAtual);
           </div>
           
         </div>
-      )} 
+      )}
+                {/* MODAL DE STATUS DO PAGAMENTO */}
+{modalPagamentoAberto && (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+        <div style={{ backgroundColor: '#fff', padding: '40px', borderRadius: '20px', textAlign: 'center', width: '400px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            
+            <h3 style={{ color: '#ff3b3b', margin: '0 0 30px 0', fontSize: '1.5rem', letterSpacing: '1px' }}>PAGAMENTO</h3>
+            
+            {/* ESTADO 1: AGUARDANDO */}
+            {statusPagamento === 'aguardando' && (
+                <div>
+                    <img src={imgFormigaPensativa} alt="Aguardando" style={{ width: '220px', marginBottom: '20px' }} />
+                    <h4 style={{ color: '#ff3b3b', fontSize: '1.2rem', margin: 0 }}>Aguardando o pagamento</h4>
+                    <h4 style={{ color: '#ff3b3b', fontSize: '1.2rem', margin: 0 }}>do pedido</h4>
+                </div>
+            )}
 
+            {/* ESTADO 2: SUCESSO */}
+            {statusPagamento === 'sucesso' && (
+                <div>
+                    <img src={imgFormigaFeliz} alt="Sucesso" style={{ width: '220px', marginBottom: '20px' }} />
+                    <h4 style={{ color: '#ff3b3b', fontSize: '1.2rem', margin: '0 0 10px 0' }}>Pagamento realizado com sucesso</h4>
+                    <p style={{ color: '#ff3b3b', fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Aproveite seu pedido 🐜</p>
+                    
+                    <button 
+                    style={{ marginTop: '30px', padding: '12px 30px', backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
+                    onClick={() => {
+                        // 1. Salva o carrinho atual no "Pedido Atual" antes de apagar
+                        if (itensCarrinho.length > 0) {
+                            setPedidoAtual({
+                                itens: [...itensCarrinho],
+                                data: new Date().toLocaleDateString('pt-BR'), // Pega a data de hoje automaticamente
+                                status: 'Preparando pedido', // Status inicial
+                                // Calcula o total do pedido
+                                total: itensCarrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0) + (dadosEntrega.isFreteGratis ? 0 : dadosEntrega.taxaEntrega)
+                            });
+                        }
+                        
+                        // 2. Fecha o modal, muda de tela e limpa o carrinho
+                        setModalPagamentoAberto(false);
+                        setTelaAtual('pedidos');
+                        setItensCarrinho([]);
+                    }}
+                >
+                    Ver meus pedidos
+                </button>
+                </div>
+            )}
+
+            {/* ESTADO 3: ERRO */}
+            {statusPagamento === 'erro' && (
+                <div>
+                    <img src={imgFormigaTriste} alt="Erro" style={{ width: '220px', marginBottom: '20px' }} />
+                    <h4 style={{ color: '#ff3b3b', fontSize: '1.2rem', margin: '0 0 10px 0' }}>OPS! Algo deu errado</h4>
+                    <p style={{ color: '#ff3b3b', fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Pagamento não foi realizado</p>
+                    <p style={{ color: '#ff3b3b', fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>com sucesso</p>
+                    
+                    <button 
+                        style={{ marginTop: '30px', padding: '12px 30px', backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
+                        onClick={() => setModalPagamentoAberto(false)}
+                    >
+                        Tentar novamente
+                    </button>
+                </div>
+            )}
+
+        </div>
+    </div>
+)} 
       </>
   );
 }
