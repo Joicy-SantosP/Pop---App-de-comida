@@ -158,9 +158,7 @@ class Pedido(db.Model):
         self.status = status
         self.total = 0.0
 
-    # =====================================
-    # TOTAL
-    # =====================================
+  #total
 
     def atualizar_total(self):
 
@@ -169,22 +167,17 @@ class Pedido(db.Model):
             for item in self.itens
         )
 
-    # =====================================
-    # SIMULAÇÃO ENTREGA
-    # =====================================
-
+## simulando a entrega
     def iniciar_simulacao(self):
 
         self.data_preparo_inicio = datetime.utcnow()
 
         self.minutos_preparo = random.randint(20, 40)
 
+    
         self.minutos_entrega = random.randint(10, 60)
-
-    # =====================================
+        
     # CÓDIGO ENTREGA
-    # =====================================
-
     def gerar_codigo_entrega(self):
 
         if self.usuario and self.usuario.telefone:
@@ -195,9 +188,7 @@ class Pedido(db.Model):
 
             self.codigo_confirmacao = celular_limpo[-4:]
 
-    # =====================================
     # CARRINHO ABANDONADO
-    # =====================================
 
     def carrinho_abandonado(self):
 

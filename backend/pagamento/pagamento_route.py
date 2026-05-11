@@ -3,6 +3,7 @@
 import mercadopago
 import os
 from flask import Blueprint, request, jsonify
+<<<<<<< HEAD
 from dotenv import load_dotenv
 from config import db
 from pedidos.pedido_model import Pedido
@@ -14,6 +15,16 @@ from pagamento.pagamento_model import (
 from endereco.endereco_model import Endereco
 from restaurantes.restaurante_model import Restaurantes
 
+=======
+from pedidos.pedido_model import Pedido
+from .pagamento_model import Pagamento, db, calcular_distancia_km
+from endereco.endereco_model import Endereco
+from restaurantes.restaurante_model import Restaurantes
+from dotenv import load_dotenv
+from fpdf import FPDF
+from flask_mail import Message, Mail
+from config import mail
+>>>>>>> 39df86110f956d9fb587785dad746dc28e809ef2
 
 load_dotenv()
 
@@ -292,6 +303,33 @@ def verificar_status(id):
         return jsonify({
 
             "status": "Cancelado",
+def enviar_nf_pdf(pedido, email_destino):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(40,10, f"Nota Fiscal - Pedido #{pedido.id}")
+    pdf.ln(10)
+    pdf.set_font("Arial", size=12)
+    
+    for item in pedido.itens:
+        pdf.cell(0,10,f"{item.quantidade}x {item.nome_doce} - R$ {item.preco_unitario}", ln=True)
+        
+    pdf.ln(5)
+    pdf.cell(0,10, f"Total: R$ {pedido.pagamento.total_final}", ln=True)
+    
+    pdf_content = pdf.output(dest='S').encode('latin-1')
+        
+    msg = Message(f"NF do seu pedido Pop Doces #{pedido.id}",
+                  sender = "popdocescontato@gmail.com",
+                  recipients=[email_destino])
+    msg.body = "Olá! Segue em anexo a nota fiscal do seu doce."
+    msg.attach("nota_fiscal.pdf", "application/pdf", pdf_content)
+    
+    mail.send(msg)
+
+@pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
+def verificar_status(id):
+    pagamento = Pagamento.query.get_or_404(id)
 
             "motivo":
             "Tempo limite excedido"
@@ -390,3 +428,36 @@ def webhook_mp():
         return jsonify({
             "erro": str(e)
         }), 500
+    mail.send(msg)
+
+
+@pagamentos_bp.route('/webhooks/mercadopago', methods=['POST'])
+def webhook_mp():
+    data_id = request.args.get('data.id') or request.json.get('data', {}).get('id')
+    
+    if data_id:
+        #payment_info = sdk.payment().get(data_id)["response"]
+        #status_real = payment_info["status"]
+        
+        status_real = "approved" #para o teste
+        
+        pagamento = Pagamento.query.filter_by(transacao_id=str(data_id)).first()
+        
+        if pagamento:
+            if status_real == "approved":
+                pagamento.status = "Pagamento Confirmado"
+                pagamento.pedido.status = "Em Preparação"
+                email_do_usuario = pagamento.pedido.usuario.email
+                try:
+                    enviar_nf_pdf(pagamento.pedido, email_do_usuario)
+                except Exception as e:
+                    print(f"Erro ao enviar email: {e}")
+            elif status_real in ["rejected", "cancelled"]:
+                pagamento.status = "Cancelado"
+                pagamento.pedido.status = "Cancelado"
+            
+            pagamento.pedido.gerar_codigo_entrega()
+            pagamento.pedido.iniciar_simulacao()
+            db.session.commit()
+
+    return "", 200

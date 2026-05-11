@@ -1,5 +1,6 @@
-from config import app, db
+from config import app, db, mail
 from flask_jwt_extended import JWTManager
+from flask_mail import Message
 
 from usuarios.usuario_route import usuario_bp
 from restaurantes.restaurante_route import restaurantes_blueprint 
@@ -32,7 +33,14 @@ app.register_blueprint(pedidos_blueprint)
 app.register_blueprint(pagamentos_bp)
 app.register_blueprint(entrega_bp)
 
-
+def enviar_confirmacao_com_pdf(pedido, email_cliente):
+    msg = Message(
+        f"Pedido #{pedido.id} Confirmado! - Pop Doces",
+        recipients=[email_cliente]
+    )
+    msg.body = "Seu pagamento foi aprovado. Segue a nota fiscal em anexo."
+    mail.send(msg)
+    
 @app.route("/", methods=['GET'])
 def home():
     return "API POP Doces funcionando!"

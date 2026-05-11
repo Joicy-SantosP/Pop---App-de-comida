@@ -3,7 +3,7 @@ from datetime import datetime
 from config import db
 from pedidos.pedido_model import Pedido
 
-# Importando do Service (Onde a sua lógica real está)
+# Importando do Service 
 from pedidos.pedido_service import (
     ver_carrinho,
     adicionar_item_ao_carrinho,
