@@ -233,8 +233,7 @@ def checkout():
                 "status":
                 novo_pagamento.status,
 
-                "total":
-                novo_pagamento.total_final,
+                "total": round(float(novo_pagamento.total_final), 2),
 
                 "detalhes":
                 payment_info.get(
