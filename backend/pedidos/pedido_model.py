@@ -1,5 +1,8 @@
 from config import db
+import random
+from datetime import datetime
 from produtos.produto_model import Produto
+from usuarios.usuario_model import Usuario
 
 class ItemPedido(db.Model):
     __tablename__ = 'item_pedido'
@@ -38,9 +41,15 @@ class Pedido(db.Model):
     restaurante_id = db.Column(db.Integer, db.ForeignKey('restaurantes.id'), nullable=False)
     status = db.Column(db.String(20), default="Aberto", nullable=False) 
     total = db.Column(db.Float, default=0.0, nullable=False)
-
+    data_preparo_inicio = db.Column(db.DateTime)
+    minutos_preparo = db.Column(db.Integer)
+    minutos_entrega = db.Column(db.Integer)
     
-    restaurante = db.relationship('Restaurante', back_populates='pedidos')
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    codigo_confirmacao = db.Column(db.String(4))
+    
+    restaurante = db.relationship('Restaurantes', back_populates='pedidos')
+    usuario = db.relationship('Usuario', backref='pedidos')
     
     # Revisar arquitetura: um pedido tem VÁRIOS itens. Se deletar o pedido, deleta os itens junto
     itens = db.relationship('ItemPedido', back_populates='pedido', cascade="all, delete-orphan")
@@ -49,6 +58,16 @@ class Pedido(db.Model):
         self.restaurante_id = restaurante_id
         self.status = status
         self.total = 0.0 # começa zerado
+        
+    def iniciar_simulacao(self):
+        self.data_preparo_inicio = datetime.utcnow()
+        self.minutos_preparo = random.randint(20,40)
+        self.minutos_entrega = random.randint(10,60)
+        
+    def gerar_codigo_entrega(self):
+        if self.usuario and self.usuario.telefone:
+            celular_limpo = ''.join(filter(str.isdigit, self.usuario.telefone))
+            self.codigo_confirmacao = celular_limpo[-4:]
 
     def atualizar_total(self):
         # Soma o subtotal de todos os itens da lista e atualiza o total
@@ -60,14 +79,34 @@ class Pedido(db.Model):
             "restaurante_id": self.restaurante_id,
             "status": self.status,
             "total": self.total,
-            "itens": [item.to_dict() for item in self.itens] # Traz os doces junto!
+
+            "restaurante_nome": self.restaurante.nome,
+
+            "itens": [
+                {
+                    "id": item.id,
+                    "nome_doce": item.nome_doce,
+                    "quantidade": item.quantidade,
+                    "preco_unitario": item.preco_unitario,
+                    "subtotal": item.subtotal(),
+
+                    # pega produto pelo nome
+                    "imagem": Produto.query.filter_by(nome=item.nome_doce).first().imagem
+                    if Produto.query.filter_by(nome=item.nome_doce).first()
+                    else None,
+
+                    "lojaNome": self.restaurante.nome
+                }
+                for item in self.itens
+            ]
         }
 
 
-def criar_carrinho(restaurante_id):
+def criar_carrinho(restaurante_id, usuario_id):
     try:
 
         novo_pedido = Pedido(restaurante_id=restaurante_id)
+        novo_pedido.usuario_id = usuario_id
         db.session.add(novo_pedido)
         db.session.commit()
         return novo_pedido.to_dict(), 201
@@ -113,3 +152,21 @@ def adicionar_item_ao_carrinho(pedido_id, dados_item):
     except Exception as e:
         db.session.rollback()
         return {"erro": "Erro interno ao adicionar item", "detalhes": str(e)}, 500
+    
+def remover_item_do_carrinho(item_id):
+    from .pedido_model import ItemPedido, Pedido # Garanta as importações
+    
+    # 1. Busca o item
+    item = ItemPedido.query.get(item_id)
+    if not item:
+        return {"erro": "Item não encontrado"}, 404
+    
+    pedido_id = item.pedido_id
+    
+    # 2. Remove do banco
+    db.session.delete(item)
+    db.session.commit()
+    
+    # 3. Busca o pedido atualizado para devolver ao Front-end
+    pedido = Pedido.query.get(pedido_id)
+    return pedido.to_dict(), 200

@@ -937,3 +937,291 @@
   padding-top: 20px;
   margin-top: 30px; /* Dá um espacinho da barra de pesquisa */
 }
+
+/* Container principal do Pop-up */
+.popup-usuario {
+  position: absolute; /* Para flutuar na tela */
+  top: 80px; /* Ajuste dependendo da altura do seu cabeçalho */
+  right: 50px; /* Ajuste para alinhar debaixo do ícone de usuário */
+  background-color: #ffffff;
+  width: 280px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  padding: 20px;
+  z-index: 1000; /* Para ficar por cima de tudo */
+}
+
+/* Botão X no topo esquerdo */
+.popup-header {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-fechar {
+  background: none;
+  border: none;
+  color: #ff3b30; /* Vermelho padrão do seu app */
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Texto de Saudação */
+.popup-saudacao {
+  color: #ff758c; /* Rosa/Vermelho do texto "Olá Usuario" */
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+/* Linha divisória */
+.popup-linha {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+/* Container dos botões */
+.popup-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espaço entre os botões */
+}
+
+/* Visual dos botões arredondados */
+.btn-opcao {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 2px solid #ff3b30; /* Borda vermelha */
+  border-radius: 30px; /* Deixa o botão em formato de pílula */
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+/* Efeito ao passar o mouse por cima do botão */
+.btn-opcao:hover {
+  background-color: #fff0f0;
+}
+
+/* Espaçamento do ícone dentro do botão */
+.icone {
+  margin-right: 10px;
+  font-size: 18px;
+}
+/* Container principal do Carrinho */
+.popup-carrinho {
+  position: absolute;
+  top: 80px;
+  right: 20px; /* Fica alinhado mais à direita com o ícone do carrinho */
+  background-color: #ffffff;
+  width: 320px;
+  min-height: 400px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ESTADO VAZIO */
+.carrinho-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.texto-vazio-titulo {
+  color: #a82424; /* Vermelho escuro */
+  margin-bottom: 5px;
+}
+
+.texto-vazio-sub {
+  color: #d15656;
+  font-size: 12px;
+}
+
+/* ESTADO CHEIO */
+.carrinho-cheio {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.texto-cinza {
+  color: #999;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.link-ver-cardapio {
+  color: #ff3b30;
+  cursor: pointer;
+}
+
+.nome-restaurante {
+  color: #a82424;
+  margin-top: 5px;
+}
+
+.item-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.item-topo {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.item-titulo { color: #a82424; }
+.item-desc { color: #999; font-size: 12px; }
+
+.item-acoes {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.item-promo { color: #5dade2; }
+.btn-editar { color: #ff3b30; cursor: pointer; font-weight: bold; margin-right: 15px;}
+.btn-remover { color: #000; cursor: pointer; font-weight: bold;}
+
+.linha-resumo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.texto-verde { color: #2ecc71; }
+.total { font-size: 18px; margin-top: 10px;}
+
+.btn-pagamento {
+  background-color: #f1427d; /* Rosa chiclete/Pink */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: 0.2s;
+}
+
+.btn-pagamento:hover { background-color: #d83b70; }
+
+/* Botão falso para você testar (pode apagar depois) */
+.btn-teste {
+  margin-top: 30px;
+  padding: 5px;
+  background: #eee;
+  border: 1px dashed #999;
+  cursor: pointer;
+  font-size: 10px;
+}
+/* Container principal da tela de pagamento */
+.container-pagamento {
+  display: flex;
+  gap: 50px;
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: sans-serif;
+}
+
+.pagamento-coluna-esq {
+  flex: 2;
+}
+
+.pagamento-coluna-dir {
+  flex: 1;
+}
+
+/* Estilos de Abas */
+.abas-simples { display: flex; gap: 30px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+.aba-ativa { color: '#ff3b3b'; font-weight: bold; cursor: pointer; }
+.aba-inativa { color: #aaa; font-weight: bold; cursor: pointer; }
+
+/* Boxes e Cards */
+.box-endereco {
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid #f0f0f0; border-radius: 15px; padding: 20px;
+  background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.icone-mapa-placeholder {
+  width: 50px; height: 50px; background: #eee; border-radius: 10px;
+  display: flex; justify-content: center; align-items: center; font-size: 24px;
+}
+
+.box-tempo {
+  border: 2px solid #333; border-radius: 10px; padding: 15px; flex: 1; cursor: pointer;
+}
+.box-tempo.ativo { border-color: #ff3b3b; }
+.tempo-titulo { margin: 0 0 5px 0; font-weight: bold; }
+.tempo-preco { margin: 0; color: #888; }
+.tempo-preco.verde { color: #2ecc71; font-weight: bold; }
+
+.box-metodo-pagamento {
+  display: flex; align-items: center; gap: 15px;
+  border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin-bottom: 20px;
+}
+
+.box-adicionar-cartao {
+  display: flex; justify-content: space-between; align-items: center;
+  background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn-outline-vermelho {
+  background: transparent; border: 2px solid #ff3b3b; color: #ff3b3b;
+  padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; margin-top: 10px;
+}
+
+.input-cpf {
+  width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 10px;
+  margin-top: 10px; font-size: 1rem;
+}
+
+.btn-fazer-pedido {
+  width: 100%; background: #ff3b3b; color: white; border: none;
+  padding: 18px; border-radius: 10px; font-size: 1.2rem; font-weight: bold;
+  cursor: pointer; margin-top: 30px;
+}
+
+/* Card Resumo na Direita */
+.resumo-pedido-fixo {
+  background: #ffebeb; /* Fundo rosinha claro */
+  padding: 30px; border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(255, 59, 59, 0.1);
+}
+
+.linha-divisoria { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+.btn-opcao-entrega {
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.btn-opcao-entrega:hover {
+    border-color: #ff3b3b;
+}

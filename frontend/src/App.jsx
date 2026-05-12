@@ -1,7 +1,10 @@
 import './App.css';
 import { useEffect, useState } from 'react';
 
-// --- SUAS IMAGENS ---
+// --- IMPORTAÇÃO DAS PÁGINAS E COMPONENTES ---
+import AreaLogada from "./pages/AreaLogada";
+
+// --- SUAS IMAGENS (Que continuam sendo usadas no App ou outras telas) ---
 import imgLogo from './assets/logo_grande.png';
 import imgBolo from './assets/fotobolo.png';
 import imgBaloes from './assets/baloes.png';
@@ -21,19 +24,81 @@ import imgMenina1 from './assets/iconeMenina1.jpg';
 import imgMenina2 from './assets/iconeMenina2.jpg';
 import imgMenina3 from './assets/iconeMenina3.jpg';
 import imgMenina4 from './assets/iconeMenina4.jpg';
+import imgEntregador from './assets/Imagem entregador.png';
+import imgCriancas from './assets/imagem crianças.png';
+
+import bannerCumprido3 from './assets/Poster Cumprido 3.png';
+import bannerCumprido4 from './assets/Poster Cumprido 4.png';
+
 
 // --- Integração com API URL do backend ---
 const API_URL = 'http://localhost:5000';
 
 function App() {
+
   const [telaAtual, setTelaAtual] = useState('home');
-
   const [tipoProduto, setTipoProduto] = useState('preparado');
+  const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
+  const [carrinhoAberto, setCarrinhoAberto] = useState(false);
+  const [carrinhoVazio, setCarrinhoVazio] = useState(true); // Começa como true (vazio)
 
-  const [lojas, setLojas] = useState([]);
+  // Novo estado para guardar qual loja o usuário clicou
+  const [lojaSelecionada, setLojaSelecionada] = useState(null);
+  // Substituímos o array vazio por dados falsos (Mock Data)
+  const [lojas, setLojas] = useState([
+    {
 
-  const [providerId, setProviderId] = useState("");
+      id: 1,
+      nome: "Tudo de bom doces",
+      especialidade: "Doces de Festa",
+      logo: imgAvatar75, // Usando a imagem que você já importou
 
+      produtos: [
+        {
+          id: 101,
+          nome: "Bolo de pote ninho com morango",
+          descricao: "Delicioso bolo de pote com creme de ninho e pedaços de morango fresco.",
+          preco: 15.00,
+          precoOriginal: 19.90,
+          imagem: imgBolo
+        },
+
+        {
+          id: 102,
+          nome: "Brigadeiros Tradicionais",
+          descricao: "Caixa com 6 brigadeiros sortidos.",
+          preco: 25.00,
+          precoOriginal: null,
+          imagem: bannerCumprido3
+        }]},
+
+    {
+      id: 2,
+      nome: "Lupa Confeitaria",
+      especialidade: "Bolos e Tortas",
+      logo: imgAvatar150,
+      produtos: [
+        {
+          id: 201,
+          nome: "Torta de Limão",
+          descricao: "Torta com massa crocante e recheio cremoso de limão.",
+          preco: 45.00,
+          precoOriginal: 55.00,
+          imagem: bannerCumprido4
+        }]}
+  ]);
+
+  // Estados para o Modal de Produto
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [quantidadeProduto, setQuantidadeProduto] = useState(1);
+  const [itensCarrinho, setItensCarrinho] = useState([]);
+
+  // --- ESTADOS DO MODAL DE ENDEREÇO ---
+  const [modalEnderecoAberto, setModalEnderecoAberto] = useState(false);
+  const [passoEndereco, setPassoEndereco] = useState(1); // Vai de 1 a 4
+  const [tipoFavorito, setTipoFavorito] = useState('');
+  const [providerId, setProviderId] = useState('');
+  
   useEffect(() => {
     const path = window.location.pathname;
 
@@ -55,18 +120,18 @@ function App() {
     }
   }, []);
 
-  {/* Integração front e backend de Cadastro de Usuário */}
+  /* Integração front e backend de Cadastro de Usuário */
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
 
-  // 🔹 TOKENS
+  // TOKENS
   const [codigoEmail, setCodigoEmail] = useState(['', '', '', '', '', '']);
   const [codigoTelefone, setCodigoTelefone] = useState(['', '', '', '', '', '']);
 
-  // 🔹 FUNÇÃO CADASTRO
+  // FUNÇÃO CADASTRO
   const cadastrarUsuario = async () => {
     try {
       const response = await fetch('http://localhost:5000/usuarios/', {
@@ -102,7 +167,6 @@ function App() {
   const validarEmail = async () => {
       const codigoFinal = codigoEmail.join('');
 
-
       try {
         const response = await fetch('http://localhost:5000/usuarios/validar', {
           method: 'POST',
@@ -122,7 +186,6 @@ function App() {
 
         alert(data.mensagem);
 
-        // 👉 vai pra validação telefone
         setTelaAtual('token-telefone-usuario');
 
       } catch (error) {
@@ -131,7 +194,7 @@ function App() {
       }
   };
 
-  // 🔹 FUNÇÃO VALIDAR TELEFONE
+  //FUNÇÃO VALIDAR TELEFONE
   const validarTelefone = async () => {
       const codigoFinal = codigoTelefone.join('');
 
@@ -154,7 +217,6 @@ function App() {
 
         alert(data.mensagem);
 
-        // 👉 finaliza fluxo
         setTelaAtual('dashboard');
 
       } catch (error) {
@@ -253,14 +315,18 @@ function App() {
           return;
         }
 
-        // 🔥 AQUI É MUITO IMPORTANTE
         const accessToken = data.access_token;
 
-        // 👉 salvar token
         localStorage.setItem('token', accessToken);
 
-        // 👉 ir pro sistema
+        if (data.usuario && data.usuario.id) {
+            localStorage.setItem('usuario_id', data.usuario.id);
+        } else if (data.id) {
+            localStorage.setItem('usuario_id', data.id);
+        }
+
         setTelaAtual('dashboard');
+
 
       } catch (error) {
         console.error(error);
@@ -268,6 +334,13 @@ function App() {
       }
     };
 
+    useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const idUrl = params.get('id');
+    if (idUrl) {
+        localStorage.setItem('usuario_id', idUrl);
+    }
+}, []);
   {/* ================================================================ */}
   // login/cadasto com o google
 
@@ -387,6 +460,28 @@ function App() {
       }
     };
 
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setForm({ ...form, imagem: reader.result }); // Salva a string da imagem no estado
+          };
+          reader.readAsDataURL(file);
+      }
+    };
+
+    const handleFileChangeProduto = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // GARANTA que está usando o set do formulário de PRODUTO
+          setFormProduto(prev => ({ ...prev, imagem: reader.result })); 
+        };
+        reader.readAsDataURL(file);
+      }
+    };
   {/* ====================================================== */}
 
   //Integração do backend de cadastro de produtos
@@ -395,7 +490,7 @@ function App() {
       preco: "",
       descricao: "",
       id_restaurante: "",
-      imagem: null
+      imagem: ""
   });
 
   const cadastrarProduto = async () => {
@@ -405,8 +500,8 @@ function App() {
       preco: parseFloat(formProduto.preco.replace(',', '.')), // Garante que o preço seja número
       descricao: formProduto.descricao,
       categoria: tipoProduto, // 'preparado', 'industrializado' ou 'combo'
-      id_restaurante: formProduto.id_restaurante, // CORREÇÃO: era .restaurante
-      imagem: null
+      id_restaurante: lojaSelecionada?.id, 
+      imagem: formProduto.imagem
     };
 
     console.log("PAYLOAD ENVIADO:", payload);
@@ -428,6 +523,7 @@ function App() {
       }
 
       alert("Produto cadastrado com sucesso!");
+      setProdutos([...produtos, novoProdutoVindoDoBack]);
       setTelaAtual("dashboard");
 
     } catch (error) {
@@ -666,7 +762,7 @@ function App() {
               </div>
               <div className="botoes-form">
                 <button type="button" className="btn-cancelar" onClick={() => setTelaAtual('home')}>CANCELAR</button>
-                <button type="button" className="btn-salvar" onClick={cadastrarUsuario}>CONTINUAR</button>
+                <button type="button" className="btn-salvar" onClick={cadastrarUsuario} >CONTINUAR</button>
               </div>
             </form>
           </div>
@@ -674,150 +770,186 @@ function App() {
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN CADASTRO DE USUÁRIO EMAIL*/}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO EMAIL    */}
       {/* ========================================== */}
       {telaAtual === 'token-email-usuario' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
-            
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu email
-            </h3>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+          </header>
 
-            <div className="linha-token">
-                {[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    onChange={(e) => handleCodigoChange(e, i, 'email')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={validarEmail}>
-                CONTINUAR
-              </button>
+
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>Digite o código de 6 digitos que enviamos</h2>
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>para o seu email</h3>
+
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        style={{ width: '50px', height: '50px', textAlign: 'center', fontSize: '1.5rem', borderRadius: '8px', border: '2px solid #000', outline: 'none', fontWeight: 'bold' }}
+                        onChange={(e) => handleCodigoChange(e, i, 'email')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
+                    ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn-salvar" style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }} onClick={validarEmail}>
+                    CONTINUAR
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN CADASTRO DE USUÁRIO TELEFONE*/}
+      {/* TELA DE TOKEN CADASTRO DE USUÁRIO TELEFONE */}
       {/* ========================================== */}
       {telaAtual === 'token-telefone-usuario' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
-            
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu Telefone
-            </h3>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+          </header>
 
-            <div className="linha-token">
-                {[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    onChange={(e) => handleCodigoChange(e, i, 'telefone')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={validarTelefone}>
-                Finalizar
-              </button>
+
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>Digite o código de 6 digitos que enviamos</h2>
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>para o seu Telefone</h3>
+
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        style={{ width: '50px', height: '50px', textAlign: 'center', fontSize: '1.5rem', borderRadius: '8px', border: '2px solid #000', outline: 'none', fontWeight: 'bold' }}
+                        onChange={(e) => handleCodigoChange(e, i, 'telefone')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
+                    ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn-salvar" style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }} onClick={validarTelefone}>
+                    Finalizar
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       )}
-
       {/* ========================================== */}
       {/* TELA DE LOGIN */}
       {/* ========================================== */}
       {telaAtual === 'login' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto' }}>
-            <form className="formulario">
-              <div className="linha-form" style={{ alignItems: 'flex-end' }}>
-                <div className="grupo-input w-70">
-                  <label>Email</label>
-                  <input type="text" onChange={(e) => setEmailLogin(e.target.value)} />
-                </div>
-                <div style={{ flex: '30%', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-salvar" style={{ padding: '12px 40px' }}  onClick={solicitarLogin} >
-                    Continuar
-                  </button>
-                </div>
-              </div>
-            </form>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
+          
+          {/* HEADER: Logo POP! e Botões do topo */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
+            {/* Logo */}
+            <img src={imgLogo} alt="POP!" style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} onClick={() => setTelaAtual('dashboard')} />
+          </header>
 
-          {/* OU ACESSAR COM */}
-            <div style={{ marginTop: '30px', textAlign: 'center' }}>
-              <p style={{ marginBottom: '20px', color: '#999', fontWeight: '500' }}>
-                ou acessar com
-              </p>
+          {/* CONTEÚDO: Imagem Esquerda + Formulário Direita */}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            
+            {/* LADO ESQUERDO - Ilustração Crianças */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgCriancas} alt="Crianças com doces" style={{ maxWidth: '500px', width: '100%', objectFit: 'contain' }} />
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+            {/* LADO DIREITO - Cartão Branco com o seu form */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '40px 50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '450px' }}>
                 
-                {/* Google */}
-                <button
-                  style={{
-                    backgroundColor: '#ff3b3b',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '12px 25px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }} onClick={() => {window.location.href = "http://localhost:5000/auth/google";}}
-                >
-                  Google
-                </button>
+                <form className="formulario">
+                  {/* Seu input de Email adaptado para o novo visual (borda preta) */}
+                  <div className="linha-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    <div className="grupo-input" style={{ width: '100%' }}>
+                      <label style={{ display: 'block', color: '#ff3b3b', fontWeight: 'bold', marginBottom: '8px', fontSize: '0.9rem' }}>Email</label>
+                      <input 
+                        type="text" 
+                        style={{ width: '100%', padding: '10px 15px', borderRadius: '8px', border: '2px solid #000', outline: 'none', boxSizing: 'border-box' }}
+                        onChange={(e) => setEmailLogin(e.target.value)} 
+                      />
+                    </div>
+                    
+                    {/* Botão Continuar */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                      <button 
+                        type="button" 
+                        className="btn-salvar" 
+                        style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 40px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }} 
+                        onClick={solicitarLogin}
+                        
+                      >
+                        Continuar
+                      </button>
+                    </div>
 
-                {/* Facebook */}
-                <button
-                  style={{
-                    backgroundColor: '#fff',
-                    color: '#ff3b3b',
-                    border: '2px solid #ff3b3b',
-                    padding: '12px 25px',
-                    borderRadius: '8px',
-                    cursor: 'not-allowed',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Facebook
-                </button>
+                  </div>
+                </form>
+
+                {/* OU ACESSAR COM (Seus botões sociais mantidos) */}
+                <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                  <p style={{ marginBottom: '20px', color: '#999', fontWeight: '500' }}>
+                    ou acessar com
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+                    {/* Google */}
+                    <button
+                      style={{ backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', flex: 1 }} 
+                      onClick={() => {window.location.href = "http://localhost:5000/auth/google";}} 
+                    >
+                      Google
+                    </button>
+
+                    {/* Facebook */}
+                    <button
+                      style={{ backgroundColor: '#fff', color: '#ff3b3b', border: '2px solid #ff3b3b', padding: '10px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', flex: 1 }} onClick={() => {window.location.href = "http://localhost:5000/auth/facebook";}}
+                    >
+                      Facebook
+                    </button>
+                  </div>
+                </div>  
 
               </div>
-            </div>  
-          </div>
-        </main>
+            </div>
+          </main>
+          
+        </div>
       )}
-
       {/* ========================================== */}
       {/* FINALIZAR CADASTRO (GOOGLE) */}
       {/* ========================================== */}
@@ -869,7 +1001,7 @@ function App() {
               <div className="linha-form">
                 <div className="grupo-input w-50">
                   <label>CPF</label>
-                  <input type="text" onChange={(e) => setCpf(e.target.value)} />
+                  <input type="text" onChange={(e) => setCpf(e.target.value)}/>
                 </div>
 
                 <div className="grupo-input w-50">
@@ -903,267 +1035,124 @@ function App() {
       )}
 
       {/* ========================================== */}
-      {/* TELA DE TOKEN */}
+      {/* TELA DE TOKEN LOGIN */}
       {/* ========================================== */}
       {telaAtual === 'token-login' && (
-        <main className="tela-cadastro">
-          <img src={imgLogo} alt="Fundo" className="logo-fundo" />
-          <div className="caixa-formulario" style={{ minHeight: 'auto', padding: '50px' }}>
-            <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              Digite o código de 6 digitos que enviamos
-            </h2>
-            
-            <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '30px', fontSize: '1.2rem' }}>
-              para o seu email
-            </h3>
-
-            <div className="linha-token">
-                {[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength="1"
-                    className="input-token"
-                    value={codigoLogin[i]}
-                    onChange={(e) => handleCodigoChange(e, i, 'login')}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
-                        e.target.previousSibling.focus();
-                      }
-                    }}
-                  />
-                ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }}>
-              <button type="button" className="btn-salvar" style={{ padding: '12px 50px' }} onClick={verificarLogin}>
-                Entrar
-              </button>
-            </div>
-          </div>
-        </main>
-      )}
-
-      {/* ========================================== */}
-      {/* TELAS LOGADAS (Dashboard, Pedidos, Tela do Restaurante) */}
-      {/* ========================================== */}
-      {(telaAtual === 'dashboard' || telaAtual === 'pedidos' || telaAtual === 'tela-restaurante') && (
-        <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#fff' }}>
+        <div style={{ backgroundColor: '#ffe6e8', minHeight: '100vh', padding: '20px 40px', fontFamily: 'sans-serif' }}>
           
-          {/* CABEÇALHO COMPARTILHADO */}
-          <header style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            padding: '15px 40px', 
-            backgroundColor: '#ffe6e8'
-          }}>
+          {/* HEADER: Logo POP! e Botões do topo */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px' }}>
             <img 
               src={imgLogo} 
-              alt="Logo POP!" 
-              onClick={() => setTelaAtual('dashboard')}
-              style={{ cursor: 'pointer', height: '50px' }} 
+              alt="POP!" 
+              style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }} 
+              onClick={() => setTelaAtual('dashboard')} 
             />
-            
-            <nav style={{ display: 'flex', gap: '30px', fontWeight: 'bold', fontSize: '1.1rem' }}>
-              <a href="#" style={{ textDecoration: 'none', color: '#ff3b3b' }}>Doces</a>
-              <a href="#" style={{ textDecoration: 'none', color: '#ff3b3b' }}>Sobremesa</a>
-              <a href="#" style={{ textDecoration: 'none', color: '#ff3b3b' }}>Sorvetes</a>
-            </nav>
-
-            <div style={{ 
-              display: 'flex', alignItems: 'center', backgroundColor: 'white', 
-              padding: '10px 20px', borderRadius: '30px', width: '350px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-            }}>
-              <span style={{ color: '#ff3b3b', marginRight: '10px' }}>🔍</span>
-              <input 
-                type="text" 
-                placeholder="Qual docinho você quer hoje ?" 
-                style={{ border: 'none', outline: 'none', width: '100%', fontSize: '1rem', color: '#555' }} 
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-              <span onClick={() => setTelaAtual('cadastro')} style={{ cursor: 'pointer', color: '#ff3b3b', fontWeight: '600', fontSize: '1.1rem' }}>
-                Cadastros
-              </span>
-              <span style={{ color: '#ff3b3b', fontSize: '1.8rem', cursor: 'pointer' }} onClick={() => setTelaAtual('menu-usuario')}>👤</span>
-              <span onClick={() => setTelaAtual('pedidos')} style={{ cursor: 'pointer', fontSize: '1.5rem', color: '#ff3b3b' }} title="Ver carrinho de pedidos">
-                🛒
-              </span>
-            </div>
           </header>
 
-          <main className="conteudo-dashboard" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
+          {/* CONTEÚDO: Imagem Esquerda + Formulário Direita */}
+          <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '50px', flexWrap: 'wrap' }}>
+            
+            {/* LADO ESQUERDO - Ilustração Entregador */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: '350px' }}>
+              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: '400px', width: '100%', objectFit: 'contain' }} />
+            </div>
 
-            {/* --- DASHBOARD --- */}
-            {telaAtual === 'dashboard' && (
-              <>
-                <section className="secao-ofertas">
-                  <h3 className="titulo-secao">Ofertas especiais no precinho 😋</h3>
-                  <div className="caixa-carrossel">
-                    <div className="area-cards-ofertas">
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
-                      <div className="card-produto">
-                        <img src={imgBolo} alt="Bolo" />
-                        <p>Bolo de pote ninho com morango</p>
-                        <span className="preco-antigo">R$19,90</span>
-                        <span className="preco-novo">R$15,00</span>
-                      </div>
-                    </div>
-                    <button className="btn-seta-carrossel">&gt;</button>
-                  </div>
-                </section>
+            {/* LADO DIREITO - Cartão Branco com o Token */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', minWidth: '350px' }}>
+              <div className="caixa-formulario" style={{ backgroundColor: '#fff', padding: '50px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '550px' }}>
                 
-                <section className="secao-lojas-dash" style={{ marginTop: '40px' }}>
-                  <h3 className="titulo-secao" style={{ color: 'black', textAlign: 'left', marginBottom: '30px' }}>Lojas</h3>
-                  
-                  {lojas.length === 0 ? (
-                    <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '12px', border: '2px dashed #eaeaea' }}>
-                      <p style={{ color: '#999', fontSize: '1.1rem', marginBottom: '20px' }}>Você ainda não possui nenhum restaurante cadastrado.</p>
-                      <button onClick={() => setTelaAtual('cadastro-restaurante')} style={{ padding: '12px 25px', backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
-                        + Cadastrar Restaurante
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
-                      {lojas.map((loja) => (
-                        <div 
-                          key={loja.id} 
-                          onClick={() => setTelaAtual('tela-restaurante')} // <--- AQUI FIZEMOS ELE SER CLICÁVEL!
-                          style={{ 
-                            display: 'flex', alignItems: 'center', gap: '15px', 
-                            cursor: 'pointer', transition: 'transform 0.2s' 
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                          <div style={{ width: '70px', height: '70px', backgroundColor: '#666', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="none"></rect><polyline points="21 15 16 10 5 21"></polyline></svg>
-                          </div>
-                          <span style={{ fontSize: '1.3rem', fontWeight: '500', color: '#000' }}>{loja.nome}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </>
-            )}
-
-            {/* --- PEDIDOS --- */}
-            {telaAtual === 'pedidos' && (
-              <section className="secao-sacola">
-                <div style={{ marginBottom: '20px' }}>
-                  <span onClick={() => setTelaAtual('dashboard')} style={{ cursor: 'pointer', color: '#ff3b3b', fontWeight: 'bold', fontSize: '1.1rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    ⬅️ Voltar
-                  </span>
-                </div>
-                <h3 className="titulo-sacola">Sua Sacolinha 🛒</h3>
-                {/* ... conteúdo da sacola que já estava aqui ... */}
-              </section>
-            )}
-
-            {/* --- NOVA TELA: DETALHES DO RESTAURANTE --- */}
-            {telaAtual === 'tela-restaurante' && (
-              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <h2 className="titulo-form" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '1.2rem', color: '#ff3b3b', fontWeight: 'bold' }}>
+                  Digite o código de 6 digitos que enviamos
+                </h2>
                 
-                {/* Cabeçalho do Restaurante */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
-                  <div style={{ 
-                    width: '100px', height: '100px', backgroundColor: '#999', borderRadius: '50%', 
-                    display: 'flex', justifyContent: 'center', alignItems: 'center' 
-                  }}>
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="none"></rect><polyline points="21 15 16 10 5 21"></polyline></svg>
-                  </div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#000' }}>Nome do restaurante</h2>
-                </div>
+                <h3 className="titulo-form" style={{ textAlign: 'center', marginBottom: '40px', fontSize: '1.2rem', color: '#000', fontWeight: 'bold' }}>
+                  para o seu email
+                </h3>
 
-                <hr style={{ border: 'none', borderTop: '2px solid #eaeaea', marginBottom: '40px' }} />
-
-                {/* Destaque para você */}
-                <div style={{ marginBottom: '50px' }}>
-                  <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', textAlign: 'center' }}>Destaque para você</h3>
-                  <div style={{ 
-                    backgroundColor: '#ffe6e8', padding: '30px', borderRadius: '10px', 
-                    display: 'flex', alignItems: 'center', position: 'relative' 
-                  }}>
-                    
-                    <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', flex: 1 }}>
-                      {[1, 2, 3, 4].map((item) => (
-                        <div key={item} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '8px', minWidth: '150px' }}>
-                          <div style={{ width: '100%', height: '120px', backgroundColor: '#aaa', borderRadius: '5px', marginBottom: '10px' }}></div>
-                          <p style={{ fontSize: '0.8rem', fontWeight: 'bold', margin: '0 0 5px 0' }}>Bolo de pote ninho com morango</p>
-                          <p style={{ fontSize: '0.7rem', color: '#999', textDecoration: 'line-through', margin: '0 0 2px 0' }}>R$19,90</p>
-                          <p style={{ fontSize: '0.9rem', color: '#00b894', fontWeight: 'bold', margin: 0 }}>R$15,00</p>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Botão circular de seta */}
-                    <div style={{ 
-                      width: '40px', height: '40px', border: '2px solid #fff', borderRadius: '50%', 
-                      display: 'flex', justifyContent: 'center', alignItems: 'center', 
-                      position: 'absolute', right: '15px', cursor: 'pointer', color: '#fff' 
-                    }}>
-                      &gt;
-                    </div>
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '2px solid #eaeaea', marginBottom: '40px' }} />
-
-                {/* Produtos da Loja */}
-                <div>
-                  <h3 style={{ fontSize: '1.2rem', marginBottom: '30px' }}>Produtos da Loja</h3>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '40px' }}>
-                    {[1, 2, 3, 4].map((item) => (
-                      <div key={item} style={{ backgroundColor: '#ffe6e8', padding: '20px', borderRadius: '10px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <div style={{ width: '90px', height: '90px', backgroundColor: '#aaa', borderRadius: '5px' }}></div>
-                        <div>
-                          <p style={{ fontWeight: 'bold', margin: '0 0 8px 0', fontSize: '1.1rem' }}>Nome do produto</p>
-                          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#333' }}>Descrição</p>
-                          <p style={{ fontWeight: 'bold', margin: 0 }}>Preço</p>
-                        </div>
-                      </div>
+                {/* Campos do Token (Comentados, já com a lógica do state codigoLogin e layout novo) */}
+                <div className="linha-token" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+                    {[0,1,2,3,4,5].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        maxLength="1"
+                        className="input-token"
+                        value={codigoLogin[i]}
+                        style={{ 
+                          width: '50px', 
+                          height: '50px', 
+                          textAlign: 'center', 
+                          fontSize: '1.5rem', 
+                          borderRadius: '8px', 
+                          border: '2px solid #000', 
+                          outline: 'none', 
+                          fontWeight: 'bold',
+                          backgroundColor: '#fff'
+                        }}
+                        onChange={(e) => handleCodigoChange(e, i, 'login')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !e.target.value && e.target.previousSibling) {
+                            e.target.previousSibling.focus();
+                          }
+                        }}
+                      />
                     ))}
-                  </div>
+                </div>
 
-                  {/* Botão flutuante de + */}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                    <button 
-                      onClick={() => setTelaAtual('cadastro-produto')}
-                      style={{ 
-                        width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#999', 
-                        color: '#fff', fontSize: '2.5rem', border: 'none', cursor: 'pointer', 
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        transition: 'transform 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                      title="Adicionar novo produto"
-                    >
-                      +
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button 
+                    type="button" 
+                    className="btn-salvar" 
+                    style={{ backgroundColor: '#ff3b3b', color: '#fff', padding: '12px 50px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }} 
+                    onClick={verificarLogin}
+                  >
+                    Entrar
+                  </button>
                 </div>
 
               </div>
-            )}
-            
+            </div>
+
           </main>
         </div>
       )}
+
+      {/* ========================================== */}
+      {/* TELAS LOGADAS (AreaLogada) (antigo area inicial)                  */}
+      {/* ========================================== */}
+        {(telaAtual === 'dashboard' || telaAtual === 'pedidos' || telaAtual === 'tela-restaurante' || telaAtual === 'pagamento') && (
+        <AreaLogada 
+          telaAtual={telaAtual} 
+          setTelaAtual={setTelaAtual}
+          menuUsuarioAberto={menuUsuarioAberto} 
+          setMenuUsuarioAberto={setMenuUsuarioAberto}
+          carrinhoAberto={carrinhoAberto} 
+          setCarrinhoAberto={setCarrinhoAberto}
+          itensCarrinho={itensCarrinho} 
+          setItensCarrinho={setItensCarrinho}
+
+          modalEnderecoAberto={modalEnderecoAberto}
+          setModalEnderecoAberto={setModalEnderecoAberto} 
+
+          passoEndereco={passoEndereco}
+          setPassoEndereco={setPassoEndereco}
+
+          tipoFavorito={tipoFavorito}
+          setTipoFavorito={setTipoFavorito}
+
+          lojaSelecionada={lojaSelecionada} 
+          setLojaSelecionada={setLojaSelecionada} 
+          lojas={lojas}
+
+        produtoSelecionado={produtoSelecionado} 
+        setProdutoSelecionado={setProdutoSelecionado}
+        quantidadeProduto={quantidadeProduto} 
+        setQuantidadeProduto={setQuantidadeProduto}
+
+        />
+      )}
+       
 
       {/* ========================================== */}
       {/* TELA DE CADASTRO */}
@@ -1327,11 +1316,11 @@ function App() {
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Numero</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.numero} onChange={(e) =>setForm({ ...form, numero: e.target.value })}/>
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.numero} onChange={(e) =>setForm({ ...form, numero: e.target.value })} />
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Complemento</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })}/>
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', fontSize: '1rem' }} value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} />
                   </div>
                 </div>
 
@@ -1342,7 +1331,7 @@ function App() {
                   </div>
                   <div style={{ flex: '1' }}>
                     <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Cidade</label>
-                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} value={form.cidade} onChange={(e) => setForm({...form,cidade: e.target.value})}/>
+                    <input type="text" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', backgroundColor: '#e0e0e0', fontSize: '1rem' }} value={form.cidade} onChange={(e) => setForm({...form,cidade: e.target.value})} />
                   </div>
                 </div>
 
@@ -1358,17 +1347,17 @@ function App() {
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>CNPJ *</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cnpj}onChange={(e) =>setForm({ ...form, cnpj: e.target.value })}/>
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cnpj}onChange={(e) =>setForm({ ...form, cnpj: e.target.value })} />
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Especialidade</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.especialidade} onChange={(e) => setForm({ ...form, especialidade: e.target.value })}/>
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.especialidade} onChange={(e) => setForm({ ...form, especialidade: e.target.value })} />
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>E-mail</label>
-                      <input type="email" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.email}onChange={(e) =>setForm({ ...form, email: e.target.value })}/>
+                      <input type="email" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.email}onChange={(e) =>setForm({ ...form, email: e.target.value })} />
                     </div>
 
                     {/* AGRUPAMENTO: Possui Salão + Logo do Restaurante */}
@@ -1388,7 +1377,7 @@ function App() {
 
                       <div style={{ flex: '1' }}>
                         <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Logo do restaurante</label>
-                        <input type="file" id="upload-logo" accept="image/*" style={{ display: 'none' }} />
+                        <input type="file" id="upload-logo" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
                         <label htmlFor="upload-logo" style={{ 
                           width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000', 
                           backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
@@ -1407,17 +1396,17 @@ function App() {
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>CPF *</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cpf} onChange={(e) =>setForm({ ...form, cpf: e.target.value })}/>
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.cpf} onChange={(e) =>setForm({ ...form, cpf: e.target.value })} />
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Nome completo</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.nome}onChange={(e) =>setForm({ ...form, nome: e.target.value })}/>
+                      <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Nome do seu Estabelecimento</label>
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.nome}onChange={(e) =>setForm({ ...form, nome: e.target.value })} />
                     </div>
                     
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ color: '#ff3b3b', display: 'block', marginBottom: '5px' }}>Celular</label>
-                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.celular}onChange={(e) =>setForm({ ...form, celular: e.target.value })}/>
+                      <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #000' }} value={form.celular}onChange={(e) =>setForm({ ...form, celular: e.target.value })} />
                     </div>
 
                     {/* Botão Salvar sozinho na direita */}
@@ -1665,9 +1654,8 @@ function App() {
                         boxSizing: 'border-box',
                         cursor: 'pointer'
                       }}
-                    >
-                      <option value="">Selecione</option>
-
+                      >
+                    
                       {restaurantes.map((rest) => (
                         <option key={rest.id} value={rest.id}>
                           {rest.nome}
@@ -1681,7 +1669,7 @@ function App() {
                 <div style={{ display: 'flex', gap: '30px', marginBottom: '30px', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ color: '#999', display: 'block', marginBottom: '8px', fontWeight: '500' }}>Imagem do Produto</label>
-                    <input id="upload-produto" accept="image/*" style={{ display: 'none' }} type="file"  />
+                    <input id="upload-produto" accept="image/*" style={{ display: 'none' }} type="file" onChange={handleFileChangeProduto} />
                     <label htmlFor="upload-produto" style={{ 
                       width: '100%', padding: '12px', borderRadius: '8px', border: '1.5px solid #000', 
                       backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
@@ -1707,7 +1695,7 @@ function App() {
                     padding: '12px 50px', borderRadius: '8px', border: 'none', 
                     backgroundColor: '#ff3b3b', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
                     boxShadow: '0 4px 10px rgba(255, 59, 59, 0.3)'
-                  }} onClick={cadastrarProduto}>
+                  }} onClick={cadastrarProduto} >
                     Feito
                   </button>
                 </div>
@@ -1753,131 +1741,7 @@ function App() {
 
         </div>
       )}
-      {/* ========================================== */}
-      {/* TELA DE MENU DO USUÁRIO */}
-      {/* ========================================== */}
-      {telaAtual === 'menu-usuario' && (
-        <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#fdf2f6', display: 'flex', flexDirection: 'column' }}>
-          
-          {/* CABEÇALHO BRANCO */}
-          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 40px', backgroundColor: '#fff' }}>
-            
-            {/* 1. Mudei aqui na Logo para ir para o dashboard */}
-            <img src={imgLogo} alt="Logo POP!" onClick={() => setTelaAtual('dashboard')} style={{ cursor: 'pointer', height: '50px' }} />
-            
-            <nav style={{ backgroundColor: '#fdf2f6', padding: '15px 50px', display: 'flex', gap: '40px', borderRadius: '5px' }}>
-              
-              {/* 2. Mudei aqui no texto 'Inicio' para ir para o dashboard */}
-              <span style={{ color: '#ff3b3b', fontWeight: '600', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setTelaAtual('dashboard')}>Inicio</span>
-              
-              <span style={{ color: '#ff3b3b', fontWeight: '600', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setTelaAtual('pedidos')}>Pedidos</span>
-              <span style={{ color: '#ff3b3b', fontWeight: '600', cursor: 'pointer', fontSize: '1.1rem' }} onClick={() => setTelaAtual('cadastro')}>Cadastros</span>
-            </nav>
-            <div>
-              <span style={{ color: '#ff3b3b', fontSize: '1.8rem', cursor: 'pointer' }} onClick={() => setTelaAtual('menu-usuario')}>👤</span>
-            </div>
-          </header>
-
-          {/* CONTEÚDO PRINCIPAL (MENU) */}
-          <main style={{ flex: 1, padding: '40px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ 
-              backgroundColor: '#fff', 
-              padding: '40px 60px', 
-              borderRadius: '12px', 
-              boxShadow: '0 10px 30px rgba(0,0,0,0.08)', 
-              maxWidth: '500px', 
-              width: '100%',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              
-              {/* Marca d'água */}
-              <img src={imgLogo} alt="" style={{ position: 'absolute', top: '15%', left: '10%', width: '80%', opacity: '0.04', pointerEvents: 'none' }} />
-
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <h2 style={{ color: '#ff7eb3', fontSize: '1.6rem', margin: '0 0 15px 0' }}>Olá Usuario do POP!</h2>
-                <hr style={{ border: 'none', borderTop: '2px solid #eaeaea', marginBottom: '40px' }} />
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  
-                  {/* Botão Pedidos */}
-                  <button onClick={() => setTelaAtual('pedidos')} style={{ 
-                    width: '100%', padding: '15px 25px', borderRadius: '10px', border: '2.5px solid #ff3b3b', 
-                    backgroundColor: '#fff', color: '#000', fontSize: '1.4rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}>
-                    📝 Pedidos
-                  </button>
-
-                  {/* Botão Meus Dados */}
-                  <button style={{ 
-                    width: '100%', padding: '15px 25px', borderRadius: '10px', border: '2.5px solid #ff3b3b', 
-                    backgroundColor: '#fff', color: '#000', fontSize: '1.4rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}>
-                    👤 Meus dados
-                  </button>
-
-                  {/* Botão Ajuda */}
-                  <button style={{ 
-                    width: '100%', padding: '15px 25px', borderRadius: '10px', border: '2.5px solid #ff3b3b', 
-                    backgroundColor: '#fff', color: '#000', fontSize: '1.4rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}>
-                    ❓ Ajuda
-                  </button>
-
-                  {/* Botão Sair */}
-                  <button onClick={() => setTelaAtual('home')} style={{ 
-                    width: '100%', padding: '15px 25px', borderRadius: '10px', border: '2.5px solid #ff3b3b', 
-                    backgroundColor: '#fff', color: '#000', fontSize: '1.4rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}>
-                    ⬅️ Sair
-                  </button>
-
-                </div>
-              </div>
-            </div>
-          </main>
-
-          {/* RODAPÉ BRANCO INFERIOR */}
-          <footer style={{ backgroundColor: '#fff', padding: '40px', borderTop: '2px solid #eaeaea' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h4 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>POP!</h4>
-                <div style={{ display: 'flex', gap: '40px', color: '#777', fontSize: '0.9rem', lineHeight: '2' }}>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Fale Conosco</a></li>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Conta e Segurança</a></li>
-                  </ul>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Nosso Blog</a></li>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Carreiras</a></li>
-                  </ul>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Privacidade</a></li>
-                    <li><a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Termos e condições de Uso</a></li>
-                  </ul>
-                </div>
-              </div>
-              <div>
-                <h4 style={{ fontSize: '1.1rem', marginBottom: '15px' }}>Redes sociais</h4>
-                <img src={imgRedesSociais} alt="Redes Sociais" style={{ height: '35px' }} />
-              </div>
-            </div>
-            
-            <hr style={{ border: 'none', borderTop: '2px solid #eaeaea', margin: '30px auto', maxWidth: '1200px' }} />
-            
-            <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '20px', color: '#999', fontSize: '0.85rem' }}>
-              <img src={imgLogo} alt="POP!" style={{ height: '30px', opacity: 0.6 }} />
-              <p>© Copyright 2026 - POP!- Todos os direitos reservados POP! com Agência de Restaurantes Online S.A.<br/>
-              CNPJ 48.713.462/0001-82 / Rua Cubatão, 726 - Vila Mariana, São Paulo - SP, 04013-002</p>
-            </div>
-          </footer>
-
-        </div>
-      )}
+      
     </div>
   );
 }

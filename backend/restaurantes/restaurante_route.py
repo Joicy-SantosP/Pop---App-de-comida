@@ -2,12 +2,15 @@
 from flask import  Blueprint, request, jsonify
 from config import db  
 import random  
+from geopy.geocoders import Nominatim
 from .restaurante_model import Restaurantes
 from datetime import datetime,timedelta
 from .services.emailRestaurante_service import send_email
 
 
 restaurantes_blueprint = Blueprint('restaurantes', __name__)
+
+geolocator = Nominatim(user_agent="pop_doces_endereco")
 
 class RestauranteNaoIdentificado(Exception):
     pass
@@ -23,6 +26,20 @@ def criar_restaurante():
 
     if not email:
         return jsonify({"erro": "Email é obrigatório"}), 400
+    
+    endereco_completo = f"{dados.get('endereco')}, {dados.get('numero', '')}, {dados.get('bairro')}, Brasil"
+    
+    try:
+        location = geolocator.geocode(endereco_completo)
+        
+        if location:
+            latitude_automatica = location.latitude
+            longitude_automatica = location.longitude
+        else:
+            return jsonify({"erro": "Não foi possivel encontrar as coordenadas para geolocalização"}), 400
+        
+    except Exception as e:
+        return jsonify({"erro": f"Erro no serviço de geolocalização: {str(e)}"}), 500
 
     restaurante = Restaurantes(
         email=email,
@@ -35,6 +52,8 @@ def criar_restaurante():
         numero=dados.get("numero"),
         bairro=dados.get("bairro"),
         endereco=dados.get("endereco"),
+        latitude=latitude_automatica,
+        longitude=longitude_automatica,
         complemento=dados.get("complemento"),
         imagem=dados.get("imagem")
     )
@@ -126,3 +145,14 @@ def deletar_restaurante(id):
 
     return {"mensagem": "Restaurante deletado com sucesso"}, 200
 
+@restaurantes_blueprint.route("/restaurantes/<int:id>/perfil", methods=["GET"])
+def obter_perfil_restaurante(id):
+    restaurante = db.session.get(Restaurantes, id)
+    if not restaurante:
+        return {"erro": "Restaurante não encontrado"}, 404
+    
+    dados = restaurante.to_dict()
+    # Adicionamos a lista de produtos convertida para dicionário
+    dados['produtos'] = [p.to_dict() for p in restaurante.produtos]
+    
+    return jsonify(dados), 200
