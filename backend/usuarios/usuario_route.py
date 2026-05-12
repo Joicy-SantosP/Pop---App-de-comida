@@ -237,4 +237,11 @@ def verify_login():
     usuario.login_token_expiration = None
     db.session.commit()
 
-    return jsonify({"access_token": access_token}), 200
+    return jsonify({
+        "access_token": access_token,
+        "usuario": {
+            "id": usuario.id,
+            "email": usuario.email,
+            "nome": usuario.nome
+        }
+    }), 200

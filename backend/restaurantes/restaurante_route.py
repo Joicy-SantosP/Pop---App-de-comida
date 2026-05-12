@@ -1,3 +1,4 @@
+# restaurante_routes.py
 from flask import  Blueprint, request, jsonify
 from config import db  
 import random  
@@ -143,3 +144,15 @@ def deletar_restaurante(id):
     db.session.commit()
 
     return {"mensagem": "Restaurante deletado com sucesso"}, 200
+
+@restaurantes_blueprint.route("/restaurantes/<int:id>/perfil", methods=["GET"])
+def obter_perfil_restaurante(id):
+    restaurante = db.session.get(Restaurantes, id)
+    if not restaurante:
+        return {"erro": "Restaurante não encontrado"}, 404
+    
+    dados = restaurante.to_dict()
+    # Adicionamos a lista de produtos convertida para dicionário
+    dados['produtos'] = [p.to_dict() for p in restaurante.produtos]
+    
+    return jsonify(dados), 200

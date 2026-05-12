@@ -23,19 +23,21 @@ def buscar_cep(cep_input):
 def cadastrar_endereco():
     data = request.json
     
-    endereco_completo = f"{data['logradouro']}, {data.get('numero','')}, {data['bairro']}, {data['cidade']}, {data['estado']}, Brasil"
-    
-    try: 
-        location = geolocator.geocode(endereco_completo)
-        
-        if location:
-            latitude_automatica = location.latitude
-            longitude_automatica = location.longitude
-        else:
-            return jsonify({"erro": "Não foi possivel encontrar as coordenadas para esse endereço"}), 400
-        
-    except Exception as e:
-        return jsonify({"erro": f"Erro no serviço de geolocalização: {str(e)}"}), 500
+    latitude_final = data.get('latitude')
+    longitude_final = data.get('longitude')
+
+    # Só tenta buscar no Geopy se o frontend NÃO mandou as coordenadas
+    if not latitude_final or not longitude_final:
+        endereco_completo = f"{data['logradouro']}, {data.get('numero','')}, {data['bairro']}, {data['cidade']}, {data['estado']}, Brasil"
+        try: 
+            location = geolocator.geocode(endereco_completo)
+            if location:
+                latitude_final = location.latitude
+                longitude_final = location.longitude
+            else:
+                return jsonify({"erro": "Não foi possivel encontrar as coordenadas para esse endereço"}), 400
+        except Exception as e:
+            return jsonify({"erro": f"Erro no serviço de geolocalização: {str(e)}"}), 500
         
     
     if data.get('principal'):
@@ -52,14 +54,22 @@ def cadastrar_endereco():
         complemento = data.get('complemento'),
         ponto_referencial = data.get('ponto_referencial'),
         rotulo = data.get('rotulo'),
-        latitude = latitude_automatica,
-        longitude = longitude_automatica,
+        latitude = latitude_final,
+        longitude = longitude_final,
         principal = data.get('principal', False)
     )
     
     db.session.add(novo_endereco)
     db.session.commit()
-    return jsonify({"mensagem": "Endereço cadastrado com sucesso!"}), 201
+    return jsonify({
+        "id": novo_endereco.id,
+        "logradouro": novo_endereco.logradouro,
+        "numero": novo_endereco.numero,
+        "cidade": novo_endereco.cidade,
+        "estado": novo_endereco.estado,
+        "lat": novo_endereco.latitude,
+        "lon": novo_endereco.longitude
+    }), 201
 
 @endereco_bp.route('/usuario/<int:user_id>', methods=['GET'])
 def listar_enderecos(user_id):
@@ -125,6 +135,39 @@ def editar_endereco(id):
 
     db.session.commit()
     return jsonify({"mensagem": "Endereço atualizado com sucesso!"}), 200
+
+@endereco_bp.route('/buscar-sugestoes', methods=['GET'])
+def buscar_sugestoes():
+    query = request.args.get('q') # O texto que o usuário digita
+    if not query:
+        return jsonify([]), 200
+    
+    # Buscamos uma lista de endereços possíveis usando geopy
+    # limit=5 para não sobrecarregar
+    locations = geolocator.geocode(query, exactly_one=False, limit=5, country_codes='br', timeout=10)
+    
+    if not locations:
+        return jsonify([]), 200
+    
+    results = []
+    for loc in locations:
+        results.append({
+            "display_name": loc.address,
+            "lat": loc.latitude,
+            "lon": loc.longitude,
+        })
+    
+    return jsonify(results), 200
+
+@endereco_bp.route('/reversa', methods=['GET'])
+def geocode_reversa():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    
+    location = geolocator.reverse(f"{lat}, {lon}")
+    # O objeto location.raw contém um dicionário 'address' com 
+    # subprefeitura, cidade, estado, cep, etc.
+    return jsonify(location.raw['address']), 200
 
 @endereco_bp.route('/<int:id>', methods=['DELETE'])
 def excluir_endereco(id):

@@ -22,7 +22,7 @@ REDIRECT_URI = "http://localhost:5000/auth/google/callback"
 
 FB_CLIENT_ID = os.getenv("FACEBOOK_CLIENT_ID")
 FB_CLIENT_SECRET = os.getenv("FACEBOOK_CLIENT_SECRET")
-FB_REDIRECT_URI = "http://localhost:5000/auth/facebook/callback"
+FB_REDIRECT_URI = "http://localhost:5000/auth/fb/callback"
 
 
 @social_auth_bp.route("/google")
@@ -93,24 +93,22 @@ def google_callback():
     
 @social_auth_bp.route("/facebook")
 def facebook_login():
-    # URL de autorização do Facebook
     base_url = "https://www.facebook.com/v19.0/dialog/oauth"
     params = {
         "client_id": FB_CLIENT_ID,
         "redirect_uri": FB_REDIRECT_URI,
-        "scope": "email,public_profile", # O que você quer pedir ao usuário
+        "scope": "email,public_profile",
         "response_type": "code"
     }
     url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return redirect(url)
 
-@social_auth_bp.route("/facebook/callback")
+@social_auth_bp.route("/fb/callback")
 def facebook_callback():
     code = request.args.get("code")
     if not code:
         return jsonify({"error": "Código não fornecido"}), 400
 
-    # 1. Trocar o código pelo Access Token
     token_url = "https://graph.facebook.com/v19.0/oauth/access_token"
     token_params = {
         "client_id": FB_CLIENT_ID,
@@ -136,7 +134,6 @@ def facebook_callback():
     provider_user_id = user_info.get("id")
     email = user_info.get("email")
 
-    # 3. Reutilizando o service
     user = login_social(
         provider="facebook",
         provider_user_id=provider_user_id,
