@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
 from .endereco_model import Endereco, db
-from geopy.geocoders import Nominatim
-import requests
+from geopy.geocoders import Nominatim # biblioteca gratuita de geolocalização 
+import requests #biblioteca para fazer chamadas em APIs externas
 
 endereco_bp = Blueprint('enderecos', __name__)
+geolocator = Nominatim(user_agent="pop_doces_endereco") # Instância do geolocator Nominatim (converte endereços em coordenadas e converte endereços em coordenadas) com user personalizado para nossa api
 
-geolocator = Nominatim(user_agent="pop_doces_endereco")
-
+# Busca informações de um CEP na API ViaCEP
 @endereco_bp.route('/cep/<string:cep_input>', methods=['GET'])
 def buscar_cep(cep_input):
     cep_limpo = ''.join(filter(str.isdigit, cep_input))
@@ -19,6 +19,7 @@ def buscar_cep(cep_input):
     
     return jsonify(response.json()), 200
 
+# Cadastra um novo endereço para um usuário
 @endereco_bp.route('/', methods=['POST'])
 def cadastrar_endereco():
     data = request.json
@@ -26,7 +27,6 @@ def cadastrar_endereco():
     latitude_final = data.get('latitude')
     longitude_final = data.get('longitude')
 
-    # Só tenta buscar no Geopy se o frontend NÃO mandou as coordenadas
     if not latitude_final or not longitude_final:
         endereco_completo = f"{data['logradouro']}, {data.get('numero','')}, {data['bairro']}, {data['cidade']}, {data['estado']}, Brasil"
         try: 
@@ -71,6 +71,7 @@ def cadastrar_endereco():
         "lon": novo_endereco.longitude
     }), 201
 
+# Lista todos os endereços ativos de um usuário específico
 @endereco_bp.route('/usuario/<int:user_id>', methods=['GET'])
 def listar_enderecos(user_id):
     enderecos = Endereco.query.filter_by(usuario_id=user_id, ativo=True).all()
@@ -88,6 +89,7 @@ def listar_enderecos(user_id):
     
     return jsonify(output), 200
 
+# Busca todos os detalhes de um endereço específico pelo ID
 @endereco_bp.route('/<int:id>', methods=['GET'])
 def buscar_endereco_detalhado(id):
     endereco = Endereco.query.get_or_404(id)
@@ -142,8 +144,6 @@ def buscar_sugestoes():
     if not query:
         return jsonify([]), 200
     
-    # Buscamos uma lista de endereços possíveis usando geopy
-    # limit=5 para não sobrecarregar
     locations = geolocator.geocode(query, exactly_one=False, limit=5, country_codes='br', timeout=10)
     
     if not locations:
@@ -165,8 +165,6 @@ def geocode_reversa():
     lon = request.args.get('lon')
     
     location = geolocator.reverse(f"{lat}, {lon}")
-    # O objeto location.raw contém um dicionário 'address' com 
-    # subprefeitura, cidade, estado, cep, etc.
     return jsonify(location.raw['address']), 200
 
 @endereco_bp.route('/<int:id>', methods=['DELETE'])

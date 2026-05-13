@@ -169,7 +169,6 @@ function AreaLogada({
   function ChangeView({ center }) {
       const map = useMap();
       useEffect(() => {
-        // Adicione um log aqui para ter certeza que o Leaflet recebeu o comando
         if (center[0] && center[1]) {
           console.log("Movendo mapa para:", center);
           map.setView(center, 18); // Zoom 18 é bem perto
@@ -1465,6 +1464,13 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
 {/*===============================PEDIDOS======================================================*/} 
             {telaAtual === 'pedidos' && (
                 <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+                                  <button 
+                  onClick={() => setTelaAtual('dashboard')}
+                  style={{ 
+                    marginBottom: '20px', padding: '8px 15px', borderRadius: '20px', 
+                    border: '1px solid #ccc', background: 'white', cursor: 'pointer',
+                    fontWeight: 'bold', color: '#666' 
+                  }}> ← Voltar para o início</button>
                     <h2 style={{ color: '#ff3b3b', marginBottom: '20px', fontSize: '1.8rem' }}>Meus Pedidos</h2>
                     
                     {/* Container Principal (Fundo rosinha claro) */}

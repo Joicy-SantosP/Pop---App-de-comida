@@ -4,7 +4,7 @@ from config import db
 
 produto_bp = Blueprint('produto_routes', __name__, url_prefix='/produtos')
 
-
+# Cadastra um novo produto no cardápio do restaurante.
 @produto_bp.route('/', methods=['POST'])
 def criar_produto():
     dados = request.json
@@ -33,21 +33,19 @@ def criar_produto():
 
     return novo_produto.to_dict(), 201
 
-
-
+#Retorna todos os produtos cadastrados no sistema.
 @produto_bp.route('/', methods=['GET'])
 def listar_produtos():
     produtos = Produto.query.all()
     return [p.to_dict() for p in produtos], 200
 
-
-
+# Busca um produto específico pelo ID.
 @produto_bp.route('/<int:id>', methods=['GET'])
 def obter_produto(id):
     produto = Produto.query.get_or_404(id)
     return produto.to_dict(), 200
 
-
+# Edita os dados de um produto existente.
 @produto_bp.route('/<int:id>', methods=['PUT'])
 def atualizar_produto(id):
     produto = Produto.query.get_or_404(id)
@@ -69,7 +67,7 @@ def atualizar_produto(id):
     db.session.commit()
     return produto.to_dict(), 200
 
-
+# Inverte o status do produto (ativo/inativo).
 @produto_bp.route('/<int:id>/status', methods=['PATCH'])
 def alterar_status(id):
     produto = Produto.query.get_or_404(id)
@@ -79,15 +77,14 @@ def alterar_status(id):
 
     return produto.to_dict(), 200
 
-
-
+# Busca produtos pelo nome (busca parcial, case insensitive).
 @produto_bp.route('/buscar', methods=['GET'])
 def buscar_produto():
     nome = request.args.get('nome')
 
     produtos = Produto.query.filter(
         Produto.nome.ilike(f"%{nome}%"),
-        Produto.status == True  # RN04
+        Produto.status == True
     ).all()
 
     return [p.to_dict() for p in produtos], 200

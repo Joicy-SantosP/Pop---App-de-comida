@@ -17,7 +17,7 @@ sdk = mercadopago.SDK(ACCESS_TOKEN)
     
 pagamentos_bp = Blueprint('pagamentos', __name__)
 
-#calcula o total do pedido com a taxa de entrega
+#Cria um pagamento no Mercado Pago e retorna o link pro cliente pagar
 @pagamentos_bp.route('/pagamentos/checkout', methods=['POST'])
 def checkout():
     data = request.json
@@ -45,14 +45,12 @@ def checkout():
             LON_RESTAURANTE, endereco_cliente.latitude, endereco_cliente.longitude)
         valor_taxa = distancia * 1.50
     
-
     novo_pagamento = Pagamento(
         pedido_id=id_do_pedido, 
         metodo=data.get('metodo_id'),
         subtotal=data.get('subtotal', 0.0),
         taxa_entrega=valor_taxa
     )
-    
     
     sucesso_validacao, mensagem = novo_pagamento.validar_pagamento(pedido_no_banco)
     if not sucesso_validacao:
@@ -74,7 +72,7 @@ def checkout():
         },
         "statement_descriptor": "POP DOCES",
         "back_urls": {
-            "success": "https://ceremony-moving-strainer.ngrok-free.dev/pagamentos/retorno-sucesso", #alterar com o link do front, os três
+            "success": "https://ceremony-moving-strainer.ngrok-free.dev/pagamentos/retorno-sucesso", 
             "failure": "http://localhost:5173",
             "pending": "http://localhost:5173"
         },
@@ -84,26 +82,22 @@ def checkout():
     }
 
     try:
-        # Criando a preferência no Mercado Pago
         result = sdk.preference().create(preference_data)
         print("DEBUG MP FULL RESPONSE:", result)
 
         if result["status"] >= 400:
-            # Se a API do MP retornar erro (ex: token inválido, preço errado)
             return jsonify({
                 "erro": "Erro na API do Mercado Pago",
                 "detalhes": result.get("response", "Sem detalhes")
             }), result["status"]
         preference = result["response"]
 
-        # Salva o ID da preferência no banco para controle
         novo_pagamento.transacao_id = preference["id"]
         novo_pagamento.status = "Aguardando Pagamento"
         
         db.session.add(novo_pagamento)
         db.session.commit()
 
-        # Retornamos o init_point para o seu front-end abrir
         return jsonify({
             "pagamento_id": novo_pagamento.id,
             "checkout_url": preference["init_point"] 
@@ -112,7 +106,7 @@ def checkout():
     except Exception as e:
         return jsonify({"erro": f"Erro ao criar preferência: {str(e)}"}), 400
     
-#envia uma nota fizcal básuica para o email após o pagamento
+# Gera um PDF simples com a nota fiscal do pedido e envia por email, é Chamado automaticamente quando o pagamento é confirmado no webhook
 def enviar_nf_pdf(pedido, email_destino):
     pdf = FPDF()
     pdf.add_page()
@@ -137,7 +131,8 @@ def enviar_nf_pdf(pedido, email_destino):
     
     mail.send(msg)
     
-#Aqui verifica o status do pedidio para o pagamento
+
+# Consulta o status de um pagamento pelo ID é usado pelo frontend pra ficar consultando se o pagamento foi aprovado.
 @pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
 def verificar_status(id):
     pagamento = Pagamento.query.get_or_404(id)
@@ -153,7 +148,7 @@ def verificar_status(id):
         "total": pagamento.total_final
     })
     
-#verifica o status do pagamento para o frontend
+# Consulta o status do pagamento de um pedido específico
 @pagamentos_bp.route('/pagamentos/pedido/<int:pedido_id>', methods=['GET'])
 def verificar_status_por_pedido(pedido_id):
 
@@ -164,7 +159,6 @@ def verificar_status_por_pedido(pedido_id):
     if not pagamento:
         return jsonify({"erro": "Pagamento não encontrado"}), 404
 
-    # verifica expiração
     if pagamento.status == "Aguardando Confirmação" and pagamento.esta_expirado():
         pagamento.status = "Cancelado"
         db.session.commit()
@@ -175,7 +169,7 @@ def verificar_status_por_pedido(pedido_id):
         "total": pagamento.total_final
     }), 200
 
-#captura a resposta do mercado pago sobre o pagamento
+# Webhook que o Mercado Pago chama quando um pagamento é aprovado/rejeitado, retorna a resposta do pagamento do pedido
 @pagamentos_bp.route('/webhooks/mercadopago', methods=['POST'])
 def webhook_mp():
     data_json = request.get_json() or {}
@@ -249,6 +243,7 @@ def webhook_mp():
 def retorno_sucesso():
     return redirect("http://localhost:5173/dashboard")
 
+# Calcula a taxa de entrega e tempo estimado antes de finalizar o pedido
 @pagamentos_bp.route('/pagamentos/calcular-taxa', methods=['POST'])
 def consultar_taxa():
     data = request.json
@@ -258,28 +253,24 @@ def consultar_taxa():
     pedido_id = data.get('pedido_id')
     restaurante_id = data.get('restaurante_id')
     
-    # Validação do endereço
     endereco_cliente = Endereco.query.get(endereco_id)
     if not endereco_cliente:
         return jsonify({"erro": "Endereço não encontrado"}), 404
     
     restaurante_do_pedido = None
     
-    # Caso 1: Tem pedido_id (fluxo normal depois do checkout)
     if pedido_id:
         pedido_no_banco = Pedido.query.get(pedido_id)
         if not pedido_no_banco:
             return jsonify({"erro": "Pedido não encontrado"}), 404
         restaurante_do_pedido = Restaurantes.query.get(pedido_no_banco.restaurante_id)
     
-    # Caso 2: Tem restaurante_id direto (carrinho ainda sem pedido)
     elif restaurante_id:
         restaurante_do_pedido = Restaurantes.query.get(restaurante_id)
     
     if not restaurante_do_pedido:
         return jsonify({"erro": "Restaurante não encontrado"}), 404
     
-    # Cálculo da distância
     LAT_RESTAURANTE = restaurante_do_pedido.latitude
     LON_RESTAURANTE = restaurante_do_pedido.longitude
     
@@ -292,10 +283,8 @@ def consultar_taxa():
     
     valor_taxa = round(distancia * 1.50, 2)
     
-    # Regra de frete grátis (exemplo: distância menor que 1km)
     is_frete_gratis = distancia < 1.0
     
-    # Tempo estimado
     tempo_base = 20
     tempo_por_km = 3
     tempo_min = tempo_base + int(distancia * tempo_por_km)

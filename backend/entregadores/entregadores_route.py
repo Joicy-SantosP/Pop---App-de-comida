@@ -7,11 +7,13 @@ from flask_jwt_extended import create_access_token
 from datetime import datetime,timedelta
 import random
 
+# Gera um código de 6 dígitos para validação por email
 def generate_token():
     return str(random.randint(100000, 999999))
 
 entregador_bp = Blueprint('entregador_routes', __name__, url_prefix='/entregadores')
 
+# Cadastra um novo entregador no sistema e envia um código de validação do email
 @entregador_bp.route('/', methods=['POST'])
 def criar_entregador():
     dados = request.json
@@ -35,19 +37,17 @@ def criar_entregador():
         foto=dados.get('foto')
     )
 
-
     token = generate_token()
     novo_entregador.email_token = token
     novo_entregador.email_token_expiration = datetime.utcnow() + timedelta(minutes=13)
 
     try:
         db.session.add(novo_entregador)
-        db.session.commit() # RN01: Valida unicidade do CPF no banco
+        db.session.commit()
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "CPF ou Email já cadastrados."}), 400
 
-    # Envio do e-mail (fora do except e com a variável correta)
     send_email(
         to_email=email,
         subject="Seu código de verificação de cadastro PopDoces",
@@ -65,6 +65,7 @@ Não informe esse código a ninguém."""
         "id": novo_entregador.id
     }), 201
 
+# Valida o código enviado por email para concluir o cadastro do entregador.
 @entregador_bp.route('/validar-acesso', methods=["POST"])
 def validar_codigo():
     data = request.get_json()
@@ -88,6 +89,7 @@ def validar_codigo():
     
     return jsonify({"mensagem": "Telefone/Email validado com sucesso. Cadastro concluído."}), 200
 
+# Atualiza os dados de um entregador existente
 @entregador_bp.route('/<int:id>', methods=['PUT'])
 def atualizar_entregador(id):
     entregador = Entregador.query.get_or_404(id)
@@ -115,11 +117,13 @@ def atualizar_entregador(id):
         
     return jsonify(entregador.to_dict()), 200
 
+#  Retorna a lista de todos os entregadores cadastrados.
 @entregador_bp.route('/', methods=['GET'])
 def listar_entregadores():
     entregadores = Entregador.query.all()
     return jsonify([e.to_dict() for e in entregadores]), 200
 
+# Inativa um entregador.
 @entregador_bp.route('/<int:id>/inativar', methods=['PATCH'])
 def inativar_entregador(id):
     entregador = Entregador.query.get_or_404(id)
@@ -128,6 +132,7 @@ def inativar_entregador(id):
     db.session.commit()
     return jsonify({"mensagem": "Entregador inativado com sucesso."})
 
+# Remove permanentemente um entregador do banco de dados
 @entregador_bp.route('/<int:id>', methods=['DELETE'])
 def deletar_entregador(id):
     entregador = Entregador.query.get_or_404(id)

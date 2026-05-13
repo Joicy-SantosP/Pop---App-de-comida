@@ -7,11 +7,13 @@ from flask_jwt_extended import create_access_token
 from datetime import datetime,timedelta
 import random
 
+# Gera um código aleatório de 6 dígitos pra validações por email/telefone
 def generate_token():
     return str(random.randint(100000, 999999))
 
 usuario_bp = Blueprint('usuario_routes', __name__, url_prefix='/usuarios')
 
+# Cadastra um novo usuário e envia códigos de verificação.
 @usuario_bp.route('/', methods=['POST'])
 def criar_usuario():
     dados = request.json
@@ -96,6 +98,7 @@ Não informe esse código à ninguém."""
         "social": bool(provider)
     }), 200
 
+# Valida o código enviado por email pra ativar o cadastro.
 @usuario_bp.route('/validar', methods=["POST"])
 def validar_codigo_usuario():
     data = request.get_json()
@@ -122,6 +125,7 @@ def validar_codigo_usuario():
     
     return jsonify({"mensagem": "Email verificado com sucesso"}), 200
 
+# Valida o código enviado por telefone (segunda etapa do cadastro).
 @usuario_bp.route('/validar-telefone', methods=['POST'])
 def validar_telefone():
     data = request.get_json()
@@ -147,16 +151,19 @@ def validar_telefone():
     
     return {"mensagem": "Número de telefone verificado"}, 200
 
+# Lista todos os usuários cadastrados no sistema
 @usuario_bp.route('/', methods=['GET'])
 def listar_usuarios():
     usuarios = Usuario.query.all()
     return[usuario.to_dict() for usuario in usuarios], 200
 
+# Busca um usuário específico pelo ID.
 @usuario_bp.route('/<int:id>', methods=['GET'])
 def obter_usuario(id):
     usuario = Usuario.query.get_or_404(id)
     return usuario.to_dict(), 200
 
+# Atualiza os dados de um usuário existente.
 @usuario_bp.route('/<int:id>', methods=['PUT'])
 def atualizar_usuario(id):
     usuario = Usuario.query.get_or_404(id)
@@ -182,7 +189,7 @@ def atualizar_usuario(id):
         return {"error":"Erro ao atualizar usuário."}, 400
     return usuario.to_dict(), 200
     
-
+# Remove permanentemente um usuário do banco.
 @usuario_bp.route('/<int:id>', methods=['DELETE'])
 def deletar_usuario(id):
     usuario = Usuario.query.get_or_404(id)
@@ -190,6 +197,7 @@ def deletar_usuario(id):
     db.session.commit()
     return "", 204
 
+# Solicita login: envia código de 6 dígitos por email.
 @usuario_bp.route("/login/request", methods=["POST"])
 def request_login():
     data = request.get_json()
@@ -214,6 +222,7 @@ def request_login():
 
     return jsonify({"message": "Token enviado para o email"}), 200
 
+# Verifica o código de login e gera o token JWT de acesso.
 @usuario_bp.route("/login/verify", methods=["POST"])
 def verify_login():
     data = request.get_json()

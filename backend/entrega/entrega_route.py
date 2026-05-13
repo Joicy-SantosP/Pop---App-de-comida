@@ -7,6 +7,7 @@ from endereco.endereco_model import Endereco
 
 entrega_bp = Blueprint('entrega', __name__)
 
+# Despacha um pedido para entrega (inicia o processo de entrega)
 @entrega_bp.route('/pedido/<int:pedido_id>/despachar', methods=['POST'])
 def despachar_pedido(pedido_id):
     data = request.json
@@ -31,10 +32,10 @@ def despachar_pedido(pedido_id):
             endereco_snapshot=endereco_completo,
             latitude_entrega=endereco_ref.latitude,
             longitude_entrega=endereco_ref.longitude,
-            taxa_entrega=data.get('taxa', 0.0) # RN03
+            taxa_entrega=data.get('taxa', 0.0)
         )
         
-        pedido.status = "Em Trânsito" # RF03
+        pedido.status = "Em Trânsito" 
         db.session.add(nova_entrega)
         db.session.commit()
         
@@ -42,7 +43,9 @@ def despachar_pedido(pedido_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": str(e)}), 500
+    
 
+# Despacha um pedido para entrega (inicia o processo de entrega)
 @entrega_bp.route('/pedido/<int:pedido_id>/confirmar-entrega', methods=['PATCH'])
 def confirmar_entrega(pedido_id):
     data = request.json

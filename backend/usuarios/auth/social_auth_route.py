@@ -83,7 +83,6 @@ def google_callback():
     if user:
         return redirect("http://localhost:5173/dashboard")
 
-    # novo usuário → completar cadastro
     return redirect(
         f"http://localhost:5173/cadastro-complementar"
         f"?provider=google"
@@ -122,8 +121,6 @@ def facebook_callback():
     if not fb_access_token:
         return jsonify({"error": "Erro ao obter token do Facebook"}), 400
 
-    # 2. Buscar dados do usuário usando o token
-    # Diferente do Google (id_token), o Facebook exige uma chamada extra à Graph API
     user_info_url = "https://graph.facebook.com/me"
     user_info_params = {
         "fields": "id,name,email",

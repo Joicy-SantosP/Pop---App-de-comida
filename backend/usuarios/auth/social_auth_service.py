@@ -27,5 +27,5 @@ def login_social(provider, provider_user_id, email):
     db.session.add(social)
     db.session.commit()
 
-    # ainda não tem cadastro completo
+
     return None

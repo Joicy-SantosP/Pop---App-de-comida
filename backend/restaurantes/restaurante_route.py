@@ -9,15 +9,17 @@ from .services.emailRestaurante_service import send_email
 
 
 restaurantes_blueprint = Blueprint('restaurantes', __name__)
-
 geolocator = Nominatim(user_agent="pop_doces_endereco")
 
+#Exceção personalizada pra quando não acha o restaurante
 class RestauranteNaoIdentificado(Exception):
     pass
 
+# Gera um código aleatório de 6 dígitos pra validação por email
 def generate_token():
     return str(random.randint(100000, 999999))
 
+# Cadastra um novo restaurante e envia código de verificação por email.
 @restaurantes_blueprint.route("/restaurantes", methods=["POST"])
 def criar_restaurante():
     dados = request.get_json()
@@ -75,6 +77,7 @@ def criar_restaurante():
 
     return jsonify({"mensagem": "Código enviado para o email"}), 200
 
+# Valida o código enviado por email e ativa o cadastro do restaurante.
 @restaurantes_blueprint.route("/restaurantes/validar", methods=["POST"])
 def validar_codigo_restaurante():
     data = request.get_json()
@@ -101,11 +104,13 @@ def validar_codigo_restaurante():
 
     return jsonify({"mensagem": "Email verificado com sucesso"}), 200
 
+# Lista todos os restaurantes cadastrados no sistema
 @restaurantes_blueprint.route("/restaurantes", methods=["GET"])
 def getRestaurantes():
     restaurantes = Restaurantes.query.all()
     return jsonify([restaurante.to_dict() for restaurante in restaurantes]), 200
 
+# Busca um restaurante específico pelo ID.
 @restaurantes_blueprint.route("/restaurantes/<int:id>", methods=["GET"])
 def obter_restaurante_por_id(id):
     restaurante = db.session.get(Restaurantes, id)
@@ -115,8 +120,7 @@ def obter_restaurante_por_id(id):
 
     return jsonify(restaurante.to_dict()), 200
 
-
-
+# Atualiza os dados de um restaurante existente.
 @restaurantes_blueprint.route("/restaurantes/<int:id>", methods=["PUT"])
 def atualizar_restaurante(id):
     restaurante = db.session.get(Restaurantes, id)
@@ -133,6 +137,7 @@ def atualizar_restaurante(id):
 
     return jsonify(restaurante.to_dict()), 200
 
+# Remove permanentemente um restaurante do banco de dados. (estamos usando mais para organização do banco)
 @restaurantes_blueprint.route("/restaurantes/<int:id>", methods=["DELETE"])
 def deletar_restaurante(id):
     restaurante = db.session.get(Restaurantes, id)
@@ -145,6 +150,7 @@ def deletar_restaurante(id):
 
     return {"mensagem": "Restaurante deletado com sucesso"}, 200
 
+# Retorna o perfil completo do restaurante incluindo a lista de produtos.
 @restaurantes_blueprint.route("/restaurantes/<int:id>/perfil", methods=["GET"])
 def obter_perfil_restaurante(id):
     restaurante = db.session.get(Restaurantes, id)
