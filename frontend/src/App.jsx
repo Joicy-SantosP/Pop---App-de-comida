@@ -98,26 +98,35 @@ function App() {
   const [passoEndereco, setPassoEndereco] = useState(1); // Vai de 1 a 4
   const [tipoFavorito, setTipoFavorito] = useState('');
   const [providerId, setProviderId] = useState('');
+  const [provider, setProvider] = useState('');
   
   useEffect(() => {
-    const path = window.location.pathname;
+      const path = window.location.pathname;
 
-    if (path === "/dashboard") {
-      setTelaAtual("dashboard");
-    }
-
-    if (path === "/cadastro-complementar") {
-      const params = new URLSearchParams(window.location.search);
-
-      const emailParam = params.get("email");
-      const providerParam = params.get("provider_user_id");
-
-      if (emailParam && providerParam) {
-        setEmail(emailParam);
-        setProviderId(providerParam);
-        setTelaAtual("cadastro-complementar");
+      if (path === "/dashboard") {
+        setTelaAtual("dashboard");
       }
-    }
+
+      if (path === "/cadastro-complementar") {
+        const params = new URLSearchParams(window.location.search);
+
+        const emailParam = params.get("email");
+        const providerParam = params.get("provider");
+        const providerIdParam = params.get("provider_user_id");
+
+        console.log("📥 Parâmetros recebidos:", {
+          email: emailParam,
+          provider: providerParam,
+          provider_user_id: providerIdParam
+        });
+
+        if (emailParam && providerIdParam && providerParam) {
+          setEmail(emailParam);
+          setProviderId(providerIdParam);
+          setProvider(providerParam); // 👈 SALVA O PROVIDER
+          setTelaAtual("cadastro-complementar");
+        }
+      }
   }, []);
 
   /* Integração front e backend de Cadastro de Usuário */
@@ -345,39 +354,53 @@ function App() {
   // login/cadasto com o google
 
 
-    const completarCadastroGoogle = async () => {
-        try {
-          const response = await fetch("http://localhost:5000/auth/cadastro-complementar", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              provider: "google",
-              provider_user_id: providerId,
-              nome,
-              telefone,
-              cpf,
-              data_nascimento: dataNascimento,
-            }),
-          });
+    const completarCadastroSocial = async () => {
+    try {
+      console.log("📤 Enviando cadastro complementar:", {
+        provider: provider,
+        provider_user_id: providerId,
+        nome,
+        telefone,
+        cpf,
+        data_nascimento: dataNascimento,
+      });
 
-          const data = await response.json();
+      const response = await fetch("http://localhost:5000/auth/cadastro-complementar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider: provider, // 👈 AGORA É DINÂMICO (google OU facebook)
+          provider_user_id: providerId,
+          nome,
+          telefone,
+          cpf,
+          data_nascimento: dataNascimento,
+        }),
+      });
 
-          if (!response.ok) {
-            alert(data.message);
-            return;
-          }
+      const data = await response.json();
 
-          alert("Cadastro finalizado!");
+      if (!response.ok) {
+        alert(data.message || data.erro);
+        return;
+      }
 
-          setTelaAtual("dashboard");
+      alert("Cadastro finalizado com sucesso!");
 
-        } catch (error) {
-          console.error(error);
-          alert("Erro ao completar cadastro");
-        }
-    };
+      // Salva o ID do usuário se vier na resposta
+      if (data.usuario_id) {
+        localStorage.setItem('usuario_id', data.usuario_id);
+      }
+
+      setTelaAtual("dashboard");
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao completar cadastro");
+    }
+};
 
     {/* ================================================== */}
     // Integração Front e Back de Cadatsro de restaurantes:
@@ -1023,7 +1046,7 @@ function App() {
                 <button 
                   type="button" 
                   className="btn-salvar"
-                  onClick={completarCadastroGoogle}
+                  onClick={completarCadastroSocial}
                 >
                   CONTINUAR
                 </button>

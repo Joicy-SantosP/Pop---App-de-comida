@@ -252,23 +252,62 @@ def retorno_sucesso():
 @pagamentos_bp.route('/pagamentos/calcular-taxa', methods=['POST'])
 def consultar_taxa():
     data = request.json
+    print("📥 DADOS RECEBIDOS:", data)
     
-    id_do_pedido = data.get('pedido_id')
-    pedido_no_banco = Pedido.query.get(id_do_pedido)
-
-    if not pedido_no_banco:
-        return jsonify({"erro": "Pedido não encontrado no banco de dados"}), 404
+    endereco_id = data.get('endereco_id')
+    pedido_id = data.get('pedido_id')
+    restaurante_id = data.get('restaurante_id')
     
-    endereco_cliente = Endereco.query.get(data.get('endereco_id'))
+    # Validação do endereço
+    endereco_cliente = Endereco.query.get(endereco_id)
     if not endereco_cliente:
         return jsonify({"erro": "Endereço não encontrado"}), 404
-        
-    restaurante_do_pedido = Restaurantes.query.get(pedido_no_banco.restaurante_id)
-        
+    
+    restaurante_do_pedido = None
+    
+    # Caso 1: Tem pedido_id (fluxo normal depois do checkout)
+    if pedido_id:
+        pedido_no_banco = Pedido.query.get(pedido_id)
+        if not pedido_no_banco:
+            return jsonify({"erro": "Pedido não encontrado"}), 404
+        restaurante_do_pedido = Restaurantes.query.get(pedido_no_banco.restaurante_id)
+    
+    # Caso 2: Tem restaurante_id direto (carrinho ainda sem pedido)
+    elif restaurante_id:
+        restaurante_do_pedido = Restaurantes.query.get(restaurante_id)
+    
+    if not restaurante_do_pedido:
+        return jsonify({"erro": "Restaurante não encontrado"}), 404
+    
+    # Cálculo da distância
     LAT_RESTAURANTE = restaurante_do_pedido.latitude
     LON_RESTAURANTE = restaurante_do_pedido.longitude
-            
-    distancia = calcular_distancia_km(LAT_RESTAURANTE, 
-            LON_RESTAURANTE, endereco_cliente.latitude, endereco_cliente.longitude)
-    valor_taxa = distancia * 1.50
-    return jsonify({"taxa_entrega": valor_taxa})
+    
+    distancia = calcular_distancia_km(
+        LAT_RESTAURANTE,
+        LON_RESTAURANTE,
+        endereco_cliente.latitude,
+        endereco_cliente.longitude
+    )
+    
+    valor_taxa = round(distancia * 1.50, 2)
+    
+    # Regra de frete grátis (exemplo: distância menor que 1km)
+    is_frete_gratis = distancia < 1.0
+    
+    # Tempo estimado
+    tempo_base = 20
+    tempo_por_km = 3
+    tempo_min = tempo_base + int(distancia * tempo_por_km)
+    tempo_max = tempo_min + 15
+    tempo_estimado = f"{tempo_min}-{tempo_max} min"
+    
+    resposta = {
+        "taxaEntrega": valor_taxa,
+        "isFreteGratis": is_frete_gratis,
+        "tempoEstimado": tempo_estimado,
+        "distancia_km": round(distancia, 2)
+    }
+    
+    print("📤 RESPOSTA:", resposta)
+    return jsonify(resposta)

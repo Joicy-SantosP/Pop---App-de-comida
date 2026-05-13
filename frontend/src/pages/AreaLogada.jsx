@@ -84,6 +84,8 @@ function AreaLogada({
   const imgPlaceholder = "https://via.placeholder.com/150";
   const produtosDaLoja = produtos.filter(p => Number(p.id_restaurante) === Number(lojaSelecionada?.id));
   const produtosEmDestaque = [...produtos].sort(() => Math.random() - 0.5).slice(0, 4);
+  const [modalEnderecos, setModalEnderecos] = useState(false);
+  const [listaEnderecos, setListaEnderecos] = useState([]);
 
   /* ==================================================
    PREÇOS
@@ -163,6 +165,18 @@ function AreaLogada({
         setSugestoes([]);
       }
   };
+  
+  function ChangeView({ center }) {
+      const map = useMap();
+      useEffect(() => {
+        // Adicione um log aqui para ter certeza que o Leaflet recebeu o comando
+        if (center[0] && center[1]) {
+          console.log("Movendo mapa para:", center);
+          map.setView(center, 18); // Zoom 18 é bem perto
+        }
+      }, [center]); // Importante: center deve ser a dependência
+      return null;
+    }
 
   const confirmarNumeroEAvancar = async () => {
     if (!semNumero && numero && enderecoSelecionado) {
@@ -245,41 +259,79 @@ function AreaLogada({
       }
   };
 
- const atualizarTaxaEntrega = async (enderecoId, pedidoId) => {
+  const buscarEnderecosDoUsuario = async () => {
+    const usuarioId = localStorage.getItem('usuario_id');
+    try {
+      const response = await fetch(`http://localhost:5000/enderecos/usuario/${usuarioId}`);
+      const dados = await response.json();
+      
+      if (response.ok) {
+        setListaEnderecos(dados);
+        setModalEnderecos(true);
+      } else {
+        alert("Erro ao buscar endereços");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar endereços:", error);
+      alert("Erro de conexão");
+    }
+  };
 
-  console.log("ENDERECO ID:", enderecoId);
-  console.log("PEDIDO ID:", pedidoId);
+  const selecionarEndereco = async (endereco) => {
+    // Atualiza o endereço selecionado
+    setEnderecoSelecionado(endereco);
+    
+    // Atualiza os dados de entrega na tela
+    setDadosEntrega({
+      rua: `${endereco.logradouro}, ${endereco.numero || 'S/N'}`,
+      cidadeEstado: `${endereco.cidade} - ${endereco.estado}`,
+      taxaEntrega: 0,
+      isFreteGratis: false,
+      tempoEstimado: ''
+    });
+    
+    // Fecha o modal
+    setModalEnderecos(false);
+    
+    // Recalcula a taxa de entrega com o novo endereço
+    if (pedidoAtivoId) {
+      await atualizarTaxaEntrega(endereco.id, pedidoAtivoId);
+    }
+  };
+
+const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
+  console.log("🔍 CALCULANDO TAXA COM:", { enderecoId, pedidoIdOuRestauranteId });
 
   try {
-
     const response = await fetch(
       'http://localhost:5000/pagamentos/calcular-taxa',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           endereco_id: enderecoId,
-          pedido_id: pedidoId
+          // Envia pedido_id SE existir, senão envia restaurante_id
+          ...(pedidoIdOuRestauranteId && pedidoIdOuRestauranteId > 0 
+            ? { pedido_id: pedidoIdOuRestauranteId }
+            : { restaurante_id: itensCarrinho[0]?.restaurante_id }
+          )
         })
       }
     );
 
     const data = await response.json();
+    console.log("✅ RESPOSTA API TAXA:", data);
 
-    console.log("RESPOSTA API:", data);
-
-    // AQUI ESTÁ O MAIS IMPORTANTE
-    setDadosEntrega(prev => ({
-      ...prev,
-      taxaEntrega: data.taxaEntrega,
-      isFreteGratis: data.isFreteGratis,
-      tempoEstimado: data.tempoEstimado
-    }));
-
+    if (data.taxaEntrega !== undefined) {
+      setDadosEntrega(prev => ({
+        ...prev,
+        taxaEntrega: data.taxaEntrega,
+        isFreteGratis: data.isFreteGratis || false,
+        tempoEstimado: data.tempoEstimado || ''
+      }));
+    }
   } catch (error) {
-    console.error("Erro ao calcular taxa:", error);
+    console.error("❌ Erro ao calcular taxa:", error);
   }
 };
 
@@ -590,6 +642,64 @@ function AreaLogada({
     }
   };
 
+  const calcularTotalComTaxa = (pedido) => {
+    const subtotal = pedido.total || 0;
+    const taxa = pedido.taxa_entrega || pedido.pagamento?.taxa_entrega || 0;
+    return subtotal + taxa;
+  };
+
+  /*==================================================
+  CANCELAR PEDIDO
+  =====================================================*/
+    const cancelarPedido = async () => {
+    if (!pedidoAtivoId) {
+      alert("Nenhum pedido ativo para cancelar.");
+      return;
+    }
+
+    const confirmar = window.confirm("Tem certeza que deseja cancelar este pedido?");
+    if (!confirmar) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/pedidos/${pedidoAtivoId}/cancelar`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      const dados = await response.json();
+
+      if (response.ok) {
+        // Limpa o carrinho
+        setItensCarrinho([]);
+        
+        // Limpa o pedido ativo
+        setPedidoAtivoId(null);
+        
+        // Remove do localStorage
+        localStorage.removeItem('pop_pedido_id');
+        
+        // Reseta os dados de entrega
+        setDadosEntrega({
+          taxaEntrega: 0,
+          isFreteGratis: false,
+          rua: '',
+          cidadeEstado: '',
+          tempoEstimado: ''
+        });
+        
+        alert("Pedido cancelado com sucesso!");
+        
+        // Redireciona para o dashboard
+        setTelaAtual('dashboard');
+      } else {
+        alert("Erro ao cancelar: " + dados.erro);
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar pedido:", error);
+      alert("Erro de conexão ao cancelar pedido.");
+    }
+  };
+
   /* ==================================================
    USeEFFECTS
   ================================================== */
@@ -675,18 +785,22 @@ function AreaLogada({
   }, [pedidoAtual]);
 
   useEffect(() => {
-    console.log("ENDERECO:", enderecoSelecionado);
-    console.log("PEDIDO:", pedidoAtual);
+    console.log("🔄 VERIFICANDO SE DEVO CALCULAR TAXA:", {
+      temEndereco: !!enderecoSelecionado?.id,
+      temPedidoAtivoId: !!pedidoAtivoId,
+      temItens: itensCarrinho.length > 0,
+    });
 
-    if (enderecoSelecionado?.id && pedidoAtual?.id) {
-
-      atualizarTaxaEntrega(
-        enderecoSelecionado.id,
-        pedidoAtual.id
-      );
+    if (enderecoSelecionado?.id && pedidoAtivoId) {
+      console.log("🚀 CHAMANDO atualizarTaxaEntrega com:", {
+        enderecoId: enderecoSelecionado.id,
+        pedidoId: pedidoAtivoId
+      });
+      atualizarTaxaEntrega(enderecoSelecionado.id, pedidoAtivoId);
+    } else {
+      console.warn("⚠️ Não foi possível calcular taxa - faltam dados");
     }
-
-  }, [enderecoSelecionado, pedidoAtual]);
+  }, [enderecoSelecionado, pedidoAtivoId, itensCarrinho]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -819,6 +933,7 @@ function AreaLogada({
 
 {/*==============================CARRINHO========================================================================== */}
               {carrinhoAberto && (
+                
                 <div className="popup-carrinho" style={{ 
                   position: 'absolute', top: '50px', right: '0', width: '380px', backgroundColor: '#fff', 
                   borderRadius: '10px', padding: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', zIndex: 999 
@@ -968,7 +1083,7 @@ function AreaLogada({
                             <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{dadosEntrega.cidadeEstado}</p>
                         </div>
                         </div>
-                        <span style={{ color: '#ff3b3b', cursor: 'pointer', fontWeight: 'bold' }}>Trocar</span>
+                        <span onClick={buscarEnderecosDoUsuario} style={{ color: '#ff3b3b', cursor: 'pointer', fontWeight: 'bold' }}>Trocar</span>
                     </div>
 
                     {/* Box de Tempo de Entrega */}
@@ -1057,6 +1172,31 @@ function AreaLogada({
 
                   {/* Botão Final */}
                   <button className="btn-fazer-pedido" onClick={handleFazerPedido}>Fazer Pedido</button>
+
+                  <button 
+                      onClick={cancelarPedido}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        marginTop: '15px',
+                        backgroundColor: '#fff',
+                        color: '#ff3b3b',
+                        border: '2px solid #ff3b3b',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fff5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fff';
+                      }}
+                    >
+                      Cancelar Pedido
+                    </button>
                 </div>
 
         {/* COLUNA DIREITA: Resumo do Pedido (Mesmo visual do carrinho) */}
@@ -1350,7 +1490,7 @@ function AreaLogada({
                                             />
                                         </div>
                                         <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
-                                            R$ {pedidoAtual.total?.toFixed(2).replace('.', ',') || "0,00"}
+                                            R$ {calcularTotalComTaxa(pedidoAtual).toFixed(2).replace('.', ',')}
                                         </span>
                                     </div>
 
@@ -1424,7 +1564,7 @@ function AreaLogada({
                                                   />
                                                 </div>
                                                 <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
-                                                    R$ {pedidoAntigo.total?.toFixed(2).replace('.', ',')}
+                                                    R$ {calcularTotalComTaxa(pedidoAntigo).toFixed(2).replace('.', ',')}
                                                 </span>
                                             </div>
 
@@ -1957,6 +2097,143 @@ function AreaLogada({
           
         </div>
       )}
+      {/* ========== MODAL DE TROCA DE ENDEREÇO ========== */}
+          {modalEnderecos && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999
+            }}>
+              <div style={{
+                backgroundColor: '#fff',
+                borderRadius: '15px',
+                padding: '30px',
+                width: '90%',
+                maxWidth: '500px',
+                maxHeight: '80vh',
+                overflowY: 'auto',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+              }}>
+                
+                {/* Cabeçalho do Modal */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '25px'
+                }}>
+                  <h3 style={{ margin: 0, color: '#ff3b3b', fontSize: '1.3rem' }}>
+                    📍 Selecione o endereço de entrega
+                  </h3>
+                  <span 
+                    onClick={() => setModalEnderecos(false)}
+                    style={{ 
+                      fontSize: '1.5rem', 
+                      cursor: 'pointer', 
+                      color: '#999',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    ✕
+                  </span>
+                </div>
+
+                {/* Lista de Endereços */}
+                {listaEnderecos.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px' }}>
+                    <p style={{ color: '#999', fontSize: '1.1rem' }}>Nenhum endereço cadastrado</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {listaEnderecos.map(endereco => (
+                      <div
+                        key={endereco.id}
+                        onClick={() => selecionarEndereco(endereco)}
+                        style={{
+                          padding: '15px',
+                          border: `2px solid ${endereco.id === enderecoSelecionado?.id ? '#ff3b3b' : '#eaeaea'}`,
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          backgroundColor: endereco.id === enderecoSelecionado?.id ? '#fff5f5' : '#fff',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#ff3b3b';
+                          e.currentTarget.style.backgroundColor = '#fff5f5';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (endereco.id !== enderecoSelecionado?.id) {
+                            e.currentTarget.style.borderColor = '#eaeaea';
+                            e.currentTarget.style.backgroundColor = '#fff';
+                          }
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
+                          <span style={{ fontSize: '1.5rem' }}>📍</span>
+                          <div>
+                            <p style={{ fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
+                              {endereco.logradouro}, {endereco.numero || 'S/N'}
+                            </p>
+                            <p style={{ margin: '3px 0 0 0', color: '#666', fontSize: '0.9rem' }}>
+                              {endereco.bairro} - {endereco.cidade}/{endereco.estado}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {endereco.complemento && (
+                          <p style={{ 
+                            margin: '5px 0 0 35px', 
+                            fontSize: '0.8rem', 
+                            color: '#999',
+                            fontStyle: 'italic'
+                          }}>
+                            "{endereco.complemento}"
+                          </p>
+                        )}
+                        
+                        {endereco.id === enderecoSelecionado?.id && (
+                          <p style={{ 
+                            margin: '10px 0 0 35px', 
+                            fontSize: '0.8rem', 
+                            color: '#ff3b3b',
+                            fontWeight: 'bold'
+                          }}>
+                            ✅ Endereço atual
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botão Cancelar */}
+                <button
+                  onClick={() => setModalEnderecos(false)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginTop: '20px',
+                    backgroundColor: '#f5f5f5',
+                    color: '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
 
 {/*=========================================STATUS PAGAMENTO========================================================*/}
       {/* MODAL DE STATUS DO PAGAMENTO */}
