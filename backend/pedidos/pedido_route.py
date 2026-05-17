@@ -73,6 +73,25 @@ def acompanhar_pedido(id):
         
     return jsonify(pedido.to_dict()), 200
 
+ ### Painel TV
+@pedidos_blueprint.route('/pedidos/painel-loja', methods=['GET'])
+def painel_loja():
+    try:
+        pedidos_ativos = Pedido.query.filter(
+            Pedido.status.in_(['Em preparacao', 'Pronto'])
+        ).all()
+        
+        em_preparo = [p.id for p in pedidos_ativos if p.status == 'Em preparacao']
+        prontos = [p.id for p in pedidos_ativos if p.status == 'Pronto']
+        
+        return jsonify({
+            "em_preparo": em_preparo,
+            "prontos_para_retirar": prontos
+        }), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
 @pedidos_blueprint.route("/pedidos/itens/<int:item_id>", methods=["DELETE"])
 def deletar_item(item_id):
     try:

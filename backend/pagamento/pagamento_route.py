@@ -28,7 +28,7 @@ def checkout():
 
     if not pedido_no_banco:
         return jsonify({"erro": "Pedido não encontrado no banco de dados"}), 404
-    
+    # cliente busca (parte de pedido)
     if tipo_envio == 'retirada':
         valor_taxa = 0.0
     else:
@@ -112,7 +112,7 @@ def checkout():
     except Exception as e:
         return jsonify({"erro": f"Erro ao criar preferência: {str(e)}"}), 400
     
-#envia uma nota fizcal básuica para o email após o pagamento
+#envia uma nota fiscal básica para o email após o pagamento
 def enviar_nf_pdf(pedido, email_destino):
     pdf = FPDF()
     pdf.add_page()
