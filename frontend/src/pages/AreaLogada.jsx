@@ -36,7 +36,8 @@ import imgFormigaComendo from '../assets/formiguinha comendo .png';
 import imgFormigaFeliz from '../assets/formigafeliz.png';
 import imgFormigaPensativa from '../assets/formigapensativa.png';
 import imgFormigaTriste from '../assets/formigatriste.png';
-
+import ModalPix from '../pages/ModalPix';
+import ModalAcompanharEntrega from '../pages/ModalAcompanharEntrega';
 
 function AreaLogada({ 
   telaAtual, setTelaAtual, 
@@ -86,6 +87,7 @@ function AreaLogada({
   const produtosEmDestaque = [...produtos].sort(() => Math.random() - 0.5).slice(0, 4);
   const [modalEnderecos, setModalEnderecos] = useState(false);
   const [listaEnderecos, setListaEnderecos] = useState([]);
+  const [modalPixAberto, setModalPixAberto] = useState(false);
 
   /* ==================================================
    PREÇOS
@@ -507,6 +509,8 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
           setStatusPagamento('erro');
       }
   };
+
+  
 
   /* ==================================================
    ENTREGA
@@ -1125,7 +1129,8 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                   // --- CONTEÚDO DA ABA: PAGUE PELO SITE ---
                   <>
                       {/* Box do PIX */}
-                      <div className="box-metodo-pagamento">
+                      <div className="box-metodo-pagamento" onClick={() => setModalPixAberto(true)} style={{ cursor: 'pointer' }}>
+                          
                           <span style={{ fontSize: '2rem', color: '#20b2aa' }}>❖</span>
                           <div>
                               <p style={{ fontWeight: 'bold', margin: 0 }}>Pague com o pix</p>
@@ -2319,6 +2324,24 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
             </div>
         </div>
     )} 
+    <ModalPix 
+      isOpen={modalPixAberto}
+      onClose={() => setModalPixAberto(false)}
+      pedidoAtivoId={pedidoAtivoId}
+      itensCarrinho={itensCarrinho}
+      dadosEntrega={dadosEntrega}
+      enderecoSelecionado={enderecoSelecionado}
+      onPagamentoConfirmado={() => {
+        // Lógica quando o pagamento for confirmado
+        setItensCarrinho([]);
+        setPedidoAtivoId(null);
+        localStorage.removeItem('pop_pedido_id');
+        carregarHistoricoPedidos();
+        toast.success('✅ Pagamento confirmado! Seu pedido está sendo preparado.');
+        setTelaAtual('pedidos');
+      }}
+    />
+
     <ToastContainer />
           </>
       );

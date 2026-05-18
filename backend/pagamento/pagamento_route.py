@@ -1,6 +1,10 @@
 import mercadopago
 import os
+import uuid
+import requests
+import json
 from flask import Blueprint, request, jsonify, redirect
+from datetime import datetime, timedelta
 from pedidos.pedido_model import Pedido
 from .pagamento_model import Pagamento, db, calcular_distancia_km
 from endereco.endereco_model import Endereco
@@ -300,3 +304,184 @@ def consultar_taxa():
     
     print("📤 RESPOSTA:", resposta)
     return jsonify(resposta)
+
+
+# Rota para criar pagamento PIX
+@pagamentos_bp.route('/pagamentos/pix', methods=['POST'])
+def criar_pix():
+    """
+    Cria um pagamento PIX via API de Orders do Mercado Pago
+    Retorna o QR Code para o front-end exibir
+    """
+    data = request.json
+    tipo_envio = data.get('tipo_envio')
+    
+    id_do_pedido = data.get('pedido_id')
+    pedido_no_banco = Pedido.query.get(id_do_pedido)
+    
+    if not pedido_no_banco:
+        return jsonify({"erro": "Pedido não encontrado no banco de dados"}), 404
+    
+    if tipo_envio == 'retirada':
+        valor_taxa = 0.0
+    else:
+        endereco_cliente = Endereco.query.get(data.get('endereco_id'))
+        if not endereco_cliente:
+            return jsonify({"erro": "Endereço não encontrado"}), 404
+        
+        restaurante_do_pedido = Restaurantes.query.get(pedido_no_banco.restaurante_id)
+        
+        LAT_RESTAURANTE = restaurante_do_pedido.latitude
+        LON_RESTAURANTE = restaurante_do_pedido.longitude
+        
+        distancia = calcular_distancia_km(LAT_RESTAURANTE, 
+            LON_RESTAURANTE, endereco_cliente.latitude, endereco_cliente.longitude)
+        valor_taxa = distancia * 1.50
+    
+    novo_pagamento = Pagamento(
+        pedido_id=id_do_pedido, 
+        metodo=data.get('metodo_id'),  # 1 = PIX
+        subtotal=data.get('subtotal', 0.0),
+        taxa_entrega=valor_taxa
+    )
+    
+    sucesso_validacao, mensagem = novo_pagamento.validar_pagamento(pedido_no_banco)
+    if not sucesso_validacao:
+        return jsonify({"erro": mensagem}), 400
+    
+    total_final = float(novo_pagamento.subtotal) + float(novo_pagamento.taxa_entrega)
+    
+    order_payload = {
+        "type": "online",
+        "total_amount": str(total_final),
+        "external_reference": str(id_do_pedido),
+        "processing_mode": "automatic",
+        "description": f"Pedido Pop Doces #{id_do_pedido}",
+        "payer": {
+            "email": "test_user_99999999@testuser.com",
+            "first_name": "APRO",
+            "last_name": "Test",
+            "identification": {
+                "type": "CPF",
+                "number": "00000000000"
+            }
+        },
+        "transactions": {
+            "payments": [
+                {
+                    "amount": str(total_final),
+                    "payment_method": {
+                        "id": "pix",
+                        "type": "bank_transfer"
+                    }
+                }
+            ]
+        }
+    }
+    
+    idempotency_key = str(uuid.uuid4())
+    
+    try:
+            response = requests.post(
+                'https://api.mercadopago.com/v1/orders',
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {ACCESS_TOKEN}',
+                    'X-Idempotency-Key': idempotency_key
+                },
+                data=json.dumps(order_payload)
+            )
+            
+            print("=" * 50)
+            print("STATUS CODE:", response.status_code)
+            print("RESPONSE TEXT:", response.text)
+            print("=" * 50)
+            
+            if response.status_code >= 400:
+                print("❌ Erro API Orders:", response.text)
+                return jsonify({
+                    "erro": "Erro na API do Mercado Pago",
+                    "detalhes": response.json() if response.text else "Sem detalhes"
+                }), response.status_code
+            
+            order_data = response.json()
+            print("✅ ORDER_DATA:", json.dumps(order_data, indent=2))
+            
+            if 'transactions' not in order_data or not order_data['transactions']:
+                print("❌ Resposta sem transactions:", order_data)
+                return jsonify({
+                    "erro": "Resposta da API não contém dados de pagamento",
+                    "detalhes": order_data
+                }), 500
+            
+            payments = order_data['transactions'].get('payments', [])
+            if not payments:
+                print("❌ Sem payments na resposta")
+                return jsonify({
+                    "erro": "Nenhum pagamento encontrado na resposta",
+                    "detalhes": order_data
+                }), 500
+                
+            payment_info = payments[0]
+            qr_code = payment_info['payment_method']['qr_code']
+            ticket_url = payment_info['payment_method']['ticket_url']
+            order_id = order_data['id']
+            
+            novo_pagamento.transacao_id = order_id
+            novo_pagamento.status = "Aguardando Pagamento"
+            
+            db.session.add(novo_pagamento)
+            db.session.commit()
+            
+            return jsonify({
+                "pagamento_id": novo_pagamento.id,
+                "order_id": order_id,
+                "qr_code": qr_code,
+                "ticket_url": ticket_url,
+                "status": "Aguardando Pagamento",
+                "total": total_final
+            }), 201
+            
+    except Exception as e:
+        print(f"❌ Erro ao criar order PIX: {e}")
+        db.session.rollback()
+        return jsonify({"erro": f"Erro ao criar pagamento PIX: {str(e)}"}), 400
+    
+# Rota TEMPORÁRIA para simular aprovação de pagamento (apenas para testes)
+@pagamentos_bp.route('/pagamentos/simular-aprovacao/<int:pedido_id>', methods=['POST'])
+def simular_aprovacao(pedido_id):
+    """Simula a aprovação de um pagamento para fins de teste acadêmico"""
+    
+    pagamento = Pagamento.query.filter_by(
+        pedido_id=pedido_id
+    ).order_by(Pagamento.id.desc()).first()
+    
+    if not pagamento:
+        return jsonify({"erro": "Pagamento não encontrado"}), 404
+    
+    # Atualiza o status
+    pagamento.status = "Pagamento Confirmado"
+    
+    if pagamento.pedido:
+        pagamento.pedido.status = "Em Preparação"
+        
+        try:
+            email_do_usuario = pagamento.pedido.usuario.email
+            enviar_nf_pdf(pagamento.pedido, email_do_usuario)
+        except Exception as e:
+            print(f"Erro ao enviar NF: {e}")
+        
+        try:
+            pagamento.pedido.gerar_codigo_entrega()
+            pagamento.pedido.iniciar_simulacao()
+        except Exception as e:
+            print(f"Erro ao iniciar simulação: {e}")
+    
+    db.session.commit()
+    
+    return jsonify({
+        "mensagem": "Pagamento aprovado com sucesso! (Simulação)",
+        "status": pagamento.status,
+        "pedido_status": pagamento.pedido.status if pagamento.pedido else None
+    }), 200
+    

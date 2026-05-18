@@ -69,3 +69,82 @@ def confirmar_entrega(pedido_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": str(e)}), 500
+
+# Simula o avanço da entrega (para teste acadêmico)
+@entrega_bp.route('/pedido/<int:pedido_id>/simular-entrega', methods=['POST'])
+def simular_entrega(pedido_id):
+    """
+    Simula o avanço do status de entrega.
+    Cada chamada avança um estágio.
+    Fluxo: Em Preparação → Em Trânsito → Próximo → Entregue
+    """
+    pedido = db.session.get(Pedido, pedido_id)
+    
+    if not pedido:
+        return jsonify({"erro": "Pedido não encontrado"}), 404
+    
+    # Define a sequência de status
+    sequencia = ["Em Preparação", "Em Trânsito", "Próximo", "Entregue"]
+    
+    # Se não tem status ainda, começa do primeiro
+    if pedido.status not in sequencia:
+        pedido.status = sequencia[0]
+        db.session.commit()
+        return jsonify({
+            "status": pedido.status,
+            "indice": 0,
+            "total": len(sequencia),
+            "mensagem": "Pedido recebido! Preparando seus doces..."
+        })
+    
+    # Encontra o índice atual
+    indice_atual = sequencia.index(pedido.status)
+    
+    # Se já está no último, não avança mais
+    if indice_atual >= len(sequencia) - 1:
+        return jsonify({
+            "status": pedido.status,
+            "indice": indice_atual,
+            "total": len(sequencia),
+            "mensagem": "Pedido entregue! Bom apetite! 🍩"
+        })
+    
+    # Avança para o próximo status
+    novo_indice = indice_atual + 1
+    pedido.status = sequencia[novo_indice]
+    
+    # Se chegou em "Em Trânsito" e não tem entrega, cria uma
+    if pedido.status == "Em Trânsito" and not pedido.detalhes_entrega:
+        endereco = Endereco.query.filter_by(usuario_id=pedido.usuario_id).first()
+        if endereco:
+            endereco_completo = f"{endereco.logradouro}, {endereco.numero} - {endereco.bairro}"
+            nova_entrega = Entrega(
+                pedido_id=pedido.id,
+                entregador_codigo=1,
+                endereco_snapshot=endereco_completo,
+                latitude_entrega=endereco.latitude,
+                longitude_entrega=endereco.longitude,
+                taxa_entrega=0.0
+            )
+            db.session.add(nova_entrega)
+    
+    # Se chegou em "Entregue", finaliza a entrega
+    if pedido.status == "Entregue" and pedido.detalhes_entrega:
+        pedido.detalhes_entrega.data_conclusao = datetime.utcnow()
+    
+    db.session.commit()
+    
+    # Mensagens para cada estágio
+    mensagens = {
+        "Em Preparação": "Seu pedido está sendo preparado com carinho! 🍩",
+        "Em Trânsito": "Entregador saiu para entrega! 🛵",
+        "Próximo": "Entregador está chegando! Fique atento! 📍",
+        "Entregue": "Pedido entregue! Bom apetite! 🎉"
+    }
+    
+    return jsonify({
+        "status": pedido.status,
+        "indice": novo_indice,
+        "total": len(sequencia),
+        "mensagem": mensagens.get(pedido.status, "")
+    }), 200
