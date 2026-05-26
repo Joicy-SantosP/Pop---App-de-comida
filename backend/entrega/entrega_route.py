@@ -83,8 +83,8 @@ def simular_entrega(pedido_id):
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-    # Define a sequência de status
-    sequencia = ["Em Preparação", "Em Trânsito", "Próximo", "Entregue"]
+    # ✅ CORRIGIDO: Usar exatamente os mesmos status do sistema
+    sequencia = ["Em Preparação", "Pronto", "Em Trânsito", "Próximo", "Entregue"]
     
     # Se não tem status ainda, começa do primeiro
     if pedido.status not in sequencia:
@@ -134,9 +134,10 @@ def simular_entrega(pedido_id):
     
     db.session.commit()
     
-    # Mensagens para cada estágio
+    # ✅ Mensagens atualizadas para combinar com os estágios do frontend
     mensagens = {
         "Em Preparação": "Seu pedido está sendo preparado com carinho! 🍩",
+        "Pronto": "Seu pedido está pronto! Aguardando entregador... 🧁",
         "Em Trânsito": "Entregador saiu para entrega! 🛵",
         "Próximo": "Entregador está chegando! Fique atento! 📍",
         "Entregue": "Pedido entregue! Bom apetite! 🎉"

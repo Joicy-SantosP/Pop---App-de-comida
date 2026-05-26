@@ -85,44 +85,44 @@ function ModalPix({
     }
   };
 
-const verificarPagamento = async () => {
-  try {
-    const responseSimulacao = await fetch(
-      `http://127.0.0.1:5000/pagamentos/simular-aprovacao/${pedidoAtivoId}`,
-      { method: 'POST' }
-    );
-    
-    const dadosSimulacao = await responseSimulacao.json();
-    
-    if (responseSimulacao.ok) {
-      setPagamentoConfirmado(true); // ← Ativa a tela de sucesso
-      
-      // Espera 3 segundos e depois redireciona
-      setTimeout(() => {
-        onPagamentoConfirmado();
-        onClose();
-      }, 3000); // 3000ms = 3 segundos
-      
-    } else {
-      const response = await fetch(
-        `http://127.0.0.1:5000/pagamentos/pedido/${pedidoAtivoId}`
+  const verificarPagamento = async () => {
+    try {
+      const responseSimulacao = await fetch(
+        `http://127.0.0.1:5000/pagamentos/simular-aprovacao/${pedidoAtivoId}`,
+        { method: 'POST' }
       );
-      const dados = await response.json();
       
-      if (dados.status === "Pagamento Confirmado") {
-        setPagamentoConfirmado(true);
+      const dadosSimulacao = await responseSimulacao.json();
+      
+      if (responseSimulacao.ok) {
+        setPagamentoConfirmado(true); // ← Ativa a tela de sucesso
+        
+        // Espera 3 segundos e depois redireciona
         setTimeout(() => {
           onPagamentoConfirmado();
           onClose();
-        }, 3000);
+        }, 3000); // 3000ms = 3 segundos
+        
       } else {
-        alert("⏳ Pagamento ainda não confirmado. Tente novamente.");
+        const response = await fetch(
+          `http://127.0.0.1:5000/pagamentos/pedido/${pedidoAtivoId}`
+        );
+        const dados = await response.json();
+        
+        if (dados.status === "Pagamento Confirmado") {
+          setPagamentoConfirmado(true);
+          setTimeout(() => {
+            onPagamentoConfirmado();
+            onClose();
+          }, 3000);
+        } else {
+          alert("⏳ Pagamento ainda não confirmado. Tente novamente.");
+        }
       }
+    } catch (error) {
+      console.error("Erro:", error);
     }
-  } catch (error) {
-    console.error("Erro:", error);
-  }
-};
+  };
 
   if (!isOpen) return null;
 
@@ -140,7 +140,7 @@ const verificarPagamento = async () => {
       zIndex: 99999 
     }}>
       <div style={{ 
-        backgroundColor: '#fff', 
+        backgroundColor: '#fff0f5', 
         padding: '40px', 
         borderRadius: '20px', 
         textAlign: 'center', 
@@ -170,7 +170,7 @@ const verificarPagamento = async () => {
         </span>
 
         <h3 style={{ 
-          color: '#20b2aa', 
+          color: '#ff3333', 
           margin: '0 0 30px 0', 
           fontSize: '1.5rem',
           display: 'flex',
@@ -196,7 +196,7 @@ const verificarPagamento = async () => {
               width: '200px', 
               height: '200px', 
               margin: '0 auto 20px auto',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: '#ffeef5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -217,7 +217,7 @@ const verificarPagamento = async () => {
               onClick={gerarPix}
               style={{ 
                 padding: '15px 30px', 
-                backgroundColor: '#20b2aa', 
+                backgroundColor: '#ff3333', 
                 color: '#fff', 
                 border: 'none', 
                 borderRadius: '10px', 
@@ -227,8 +227,8 @@ const verificarPagamento = async () => {
                 fontSize: '1.1rem',
                 transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a8f8f'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#20b2aa'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d11616'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#aa1f1f'}
             >
               Gerar QR Code PIX
             </button>
@@ -257,7 +257,7 @@ const verificarPagamento = async () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '10px',
-                border: '2px solid #20b2aa',
+                border: '2px solid #ff3333',
                 overflow: 'hidden',
                 padding: '10px'
                 }}>
@@ -297,7 +297,7 @@ const verificarPagamento = async () => {
                 <button 
                   onClick={copiarCodigoPix}
                   style={{ 
-                    backgroundColor: '#20b2aa', 
+                    backgroundColor: '#ff3333', 
                     color: '#fff', 
                     border: 'none', 
                     padding: '10px 20px', 
@@ -307,7 +307,7 @@ const verificarPagamento = async () => {
                     width: '100%'
                   }}
                 >
-                  📋 Copiar Código PIX
+                  Copiar Código PIX
                 </button>
               </div>
             )}
@@ -331,7 +331,7 @@ const verificarPagamento = async () => {
                 onClick={verificarPagamento}
                 style={{ 
                   padding: '12px 30px', 
-                  backgroundColor: '#00b894', 
+                  backgroundColor: '#d11616', 
                   color: '#fff', 
                   border: 'none', 
                   borderRadius: '8px', 
@@ -341,7 +341,7 @@ const verificarPagamento = async () => {
                   fontSize: '1rem'
                 }}
               >
-                ✅ Já paguei, verificar
+                Já paguei, verificar
               </button>
             </div>
           </div>

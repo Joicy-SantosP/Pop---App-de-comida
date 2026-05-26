@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, redirect
+from flask_jwt_extended import create_access_token
 import urllib.parse
 import requests
 import os
@@ -81,7 +82,13 @@ def google_callback():
     )
 
     if user:
-        return redirect("http://localhost:5173/dashboard")
+        access_token = create_access_token(identity=user.id)
+        return redirect(
+            f"http://localhost:5173/dashboard"
+            f"?token={access_token}"
+            f"&usuario_id={user.id}"
+            f"&email={user.email}"
+        )
 
     return redirect(
         f"http://localhost:5173/cadastro-complementar"
@@ -138,8 +145,14 @@ def facebook_callback():
     )
 
     if user:
-        return redirect("http://localhost:5173/dashboard")
-
+        access_token=create_access_token(identity=user.id)
+        return redirect(
+            f"http://localhost:5173/dashboard"
+            f"?token={access_token}"
+            f"&usuarios_id={user.id}"
+            f"&email={user.email}"    
+        )
+        
     return redirect(
         f"http://localhost:5173/cadastro-complementar"
         f"?provider=facebook"
@@ -177,5 +190,15 @@ def complete_social_register():
         user.data_nascimento = datetime.strptime(data_nascimento, "%Y-%m-%d").date()
 
     db.session.commit()
+    
+    access_token = create_access_token(identity=user.id)
+    
 
-    return jsonify({"message": "Cadastro completo"}), 200
+    return jsonify({"message": "Cadastro completo",
+                    "usuario_id": user.id,
+                    "access_token": access_token,
+                    "usuario":{
+                        "id": user.id,
+                        "email": user.email,
+                        "nome":user.nome}
+                    }), 200

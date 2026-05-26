@@ -485,3 +485,121 @@ def simular_aprovacao(pedido_id):
         "pedido_status": pagamento.pedido.status if pagamento.pedido else None
     }), 200
     
+@pagamentos_bp.route('/pagamentos/checkout-retirada', methods=['POST'])
+def checkout_retirada():
+    """Checkout para retirada no local"""
+    data = request.json
+    id_do_pedido = data.get('pedido_id')
+    pedido_no_banco = Pedido.query.get(id_do_pedido)
+
+    if not pedido_no_banco:
+        return jsonify({"erro": "Pedido não encontrado"}), 404
+    
+    # Configura pedido como retirada
+    pedido_no_banco.tipo_retirada = 'retirada'
+    pedido_no_banco.gerar_senha_retirada()
+    
+    novo_pagamento = Pagamento(
+        pedido_id=id_do_pedido, 
+        metodo=data.get('metodo_id'),
+        subtotal=data.get('subtotal', 0.0),
+        taxa_entrega=0.0  # Retirada: sem taxa
+    )
+    
+    sucesso_validacao, mensagem = novo_pagamento.validar_pagamento(pedido_no_banco)
+    if not sucesso_validacao:
+        return jsonify({"erro": mensagem}), 400
+    
+    total_final = float(novo_pagamento.subtotal)
+
+    preference_data = {
+        "items": [{
+            "title": f"Pedido Pop Doces #{id_do_pedido} - Retirada",
+            "quantity": 1,
+            "unit_price": total_final,
+            "currency_id": "BRL"
+        }],
+        "payer": {
+            "email": data.get('email_cliente'),
+        },
+        "statement_descriptor": "POP DOCES",
+        "back_urls": {
+            "success": "https://seusite.com/pedido-confirmado",
+            "failure": "https://seusite.com/erro",
+            "pending": "https://seusite.com/pendente"
+        },
+        "auto_return": "approved",
+        "external_reference": str(id_do_pedido),
+        "notification_url": "https://ceremony-moving-strainer.ngrok-free.dev/webhooks/mercadopago"
+    }
+
+    try:
+        result = sdk.preference().create(preference_data)
+        
+        if result["status"] >= 400:
+            return jsonify({
+                "erro": "Erro na API do Mercado Pago",
+                "detalhes": result.get("response")
+            }), result["status"]
+            
+        preference = result["response"]
+        novo_pagamento.transacao_id = preference["id"]
+        novo_pagamento.status = "Aguardando Pagamento"
+        
+        db.session.add(novo_pagamento)
+        db.session.commit()
+
+        return jsonify({
+            "pagamento_id": novo_pagamento.id,
+            "checkout_url": preference["init_point"],
+            "numero_senha": pedido_no_banco.numero_senha,
+            "pedido_id": id_do_pedido
+        }), 201
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao criar preferência: {str(e)}"}), 400
+
+
+# Endpoint que o painel consulta periodicamente
+@pagamentos_bp.route('/painel/pedidos-prontos', methods=['GET'])
+def pedidos_prontos_painel():
+    """Retorna pedidos prontos para exibição no painel"""
+    pedidos_prontos = Pedido.query.filter_by(
+        tipo_retirada='retirada',
+        status_preparo='pronto'
+    ).order_by(Pedido.data_pedido.asc()).limit(20).all()
+    
+    resultado = []
+    for pedido in pedidos_prontos:
+        resultado.append({
+            'id': pedido.id,
+            'numero_senha': pedido.numero_senha,
+            'nome_cliente': pedido.usuario.nome.split()[0],  # Só primeiro nome
+            'data_pronto': pedido.data_atualizacao.isoformat() if pedido.data_atualizacao else None
+        })
+    
+    return jsonify(resultado), 200
+
+
+# Endpoint para simular mudança de status (será substituído pelo sistema do restaurante)
+@pagamentos_bp.route('/admin/atualizar-status-pedido/<int:pedido_id>', methods=['PUT'])
+def atualizar_status_pedido(pedido_id):
+    """Endpoint administrativo para mudar status dos pedidos"""
+    data = request.json
+    novo_status = data.get('status_preparo')
+    
+    if novo_status not in ['confirmado', 'preparando', 'pronto', 'finalizado']:
+        return jsonify({"erro": "Status inválido"}), 400
+    
+    pedido = Pedido.query.get_or_404(pedido_id)
+    pedido.status_preparo = novo_status
+    db.session.commit()
+    
+    return jsonify({
+        "mensagem": "Status atualizado",
+        "pedido_id": pedido_id,
+        "numero_senha": pedido.numero_senha,
+        "status_preparo": pedido.status_preparo
+    }), 200
+    
+    

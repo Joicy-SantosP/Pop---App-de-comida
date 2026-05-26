@@ -1,5 +1,5 @@
 from config import app, db, mail
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, create_access_token
 from flask_mail import Message
 
 from usuarios.usuario_route import usuario_bp

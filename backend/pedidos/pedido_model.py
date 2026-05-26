@@ -48,6 +48,11 @@ class Pedido(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     codigo_confirmacao = db.Column(db.String(4))
     
+    tipo_retirada = db.Column(db.String(30), default='entrega')
+    status_preparo = db.Column(db.String(30), default='confirmado')
+    
+    numero_senha = db.Column(db.String(6))
+    
     restaurante = db.relationship('Restaurantes', back_populates='pedidos')
     usuario = db.relationship('Usuario', backref='pedidos')
     
@@ -68,6 +73,10 @@ class Pedido(db.Model):
         if self.usuario and self.usuario.telefone:
             celular_limpo = ''.join(filter(str.isdigit, self.usuario.telefone))
             self.codigo_confirmacao = celular_limpo[-4:]
+    
+    def gerar_senha_retirada(self):
+        self.numero_senha = str(random.randint(100,999))
+        return self.numero_senha
 
     def atualizar_total(self):
         # Soma o subtotal de todos os itens da lista e atualiza o total

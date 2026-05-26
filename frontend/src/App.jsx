@@ -351,8 +351,25 @@ function App() {
     }
 }, []);
   {/* ================================================================ */}
-  // login/cadasto com o google
+  // login/cadasto com o google e facebook
 
+    useEffect(() => {
+      // Captura parâmetros da URL (para login social)
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const usuarioId = params.get('usuario_id');
+      const email = params.get('email');
+
+      if (token && usuarioId) {
+        // Salva no localStorage
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('usuario_id', usuarioId);
+        if (email) localStorage.setItem('usuario_email', email);
+        
+        // Limpa a URL (opcional)
+        window.history.replaceState({}, document.title, '/dashboard');
+      }
+    }, []);
 
     const completarCadastroSocial = async () => {
     try {
@@ -392,6 +409,9 @@ function App() {
       // Salva o ID do usuário se vier na resposta
       if (data.usuario_id) {
         localStorage.setItem('usuario_id', data.usuario_id);
+      }
+      if (data.access_token) {
+        localStorage.setItem('access_token', data.access_token);
       }
 
       setTelaAtual("dashboard");
@@ -517,13 +537,18 @@ function App() {
   });
 
   const cadastrarProduto = async () => {
+    if (!lojaSelecionada || !lojaSelecionada.id) {
+      alert("Por favor, selcione um restaurante antes de cadastrar o produto.");
+      return;
+    }
+
   // O payload precisa bater com o que o Backend espera e com o que seu State tem
     const payload = {
       nome: formProduto.nome,
       preco: parseFloat(formProduto.preco.replace(',', '.')), // Garante que o preço seja número
       descricao: formProduto.descricao,
       categoria: tipoProduto, // 'preparado', 'industrializado' ou 'combo'
-      id_restaurante: lojaSelecionada?.id, 
+      id_restaurante: lojaSelecionada.id, 
       imagem: formProduto.imagem
     };
 
@@ -546,7 +571,14 @@ function App() {
       }
 
       alert("Produto cadastrado com sucesso!");
-      setProdutos([...produtos, novoProdutoVindoDoBack]);
+      setProdutos(prevProdutos => [...produtos, novoProdutoVindoDoBack]);
+      setFormProduto({
+        nome: "",
+        preco:"",
+        descricao:"",
+        id_restaurante:"",
+        imagem:""
+      });
       setTelaAtual("dashboard");
 
     } catch (error) {

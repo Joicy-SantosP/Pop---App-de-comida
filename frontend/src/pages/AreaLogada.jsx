@@ -38,6 +38,8 @@ import imgFormigaPensativa from '../assets/formigapensativa.png';
 import imgFormigaTriste from '../assets/formigatriste.png';
 import ModalPix from '../pages/ModalPix';
 import ModalAcompanharEntrega from '../pages/ModalAcompanharEntrega';
+import ModalConfirmacaoRetirada from '../pages/ModalConfirmacaoRetirada';
+import ModalPainelSenhas from '../pages/ModalPainelSenhas';
 
 function AreaLogada({ 
   telaAtual, setTelaAtual, 
@@ -88,6 +90,11 @@ function AreaLogada({
   const [modalEnderecos, setModalEnderecos] = useState(false);
   const [listaEnderecos, setListaEnderecos] = useState([]);
   const [modalPixAberto, setModalPixAberto] = useState(false);
+  const [modalAcompanharAberto, setModalAcompanharAberto] = useState(false);
+  const [tipoEnvio, setTipoEnvio] = useState('entrega'); // 'entrega' ou 'retirada'
+  const [pedidoConfirmadoRetirada, setPedidoConfirmadoRetirada] = useState(null);
+  const [modalConfirmacaoRetiradaAberto, setModalConfirmacaoRetiradaAberto] = useState(false);
+  const [modalPainelSenhasAberto, setModalPainelSenhasAberto] = useState(false);
 
   /* ==================================================
    PREÇOS
@@ -214,8 +221,14 @@ function AreaLogada({
 
   const salvarEnderecoCompleto = async () => {
       const idLogado = localStorage.getItem('usuario_id');
+
+      if (!idLogado) {
+        alert("Usuário não identificado. Faça o login novamente.");
+        return;
+      }
+
       const payload = {
-        usuario_id: 1,
+        usuario_id: parseInt(idLogado),
         cep: enderecoSelecionado.cep || '00000-000',
         logradouro: enderecoSelecionado.logradouro,
         numero: semNumero ? 'S/N' : numero,
@@ -391,12 +404,20 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
       let idCarrinho = pedidoAtivoId;
 
       if (!idCarrinho) {
+        // ✅ Pega o ID do usuário logado
+        const usuarioId = localStorage.getItem('usuario_id');
+        
+        if (!usuarioId) {
+          alert("Usuário não identificado. Faça login novamente.");
+          return;
+        }
+
         const resCarrinho = await fetch("http://127.0.0.1:5000/pedidos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             restaurante_id: lojaSelecionada.id,
-            usuario_id: 1, 
+            usuario_id: parseInt(usuarioId), // ✅ Usa o ID real do usuário
           }),
         });
         const dadosCarrinho = await resCarrinho.json();
@@ -460,53 +481,70 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
    PAGAMENTO
   ================================================== */
   const handleFazerPedido = async () => {
-      console.log("DEBUG CHECKOUT - Endereço Atual:", enderecoSelecionado, "ID Pedido:", pedidoAtivoId);
-      if (!enderecoSelecionado || !enderecoSelecionado.id) {
-          alert("O endereço selecionado ainda não foi salvo. Por favor, confirme o endereço no mapa antes de prosseguir.");
-          setModalPagamentoAberto(false);
-          return;
+      if (tipoEnvio === 'entrega' && (!enderecoSelecionado || !enderecoSelecionado.id)) {
+        alert("O endereço selecionado ainda não foi salvo.");
+        setModalPagamentoAberto(false);
+        return;
       }
 
       setModalPagamentoAberto(true);
       setStatusPagamento('aguardando');
 
       try {
-          const dadosCheckout = {
-              pedido_id: pedidoAtivoId,
-              metodo_id: abaPagamento === 'site' ? 1 : 3,
-              tipo_envio: 'entrega',
-              subtotal: Number(itensCarrinho.reduce((acc, i) => acc + (i.preco_unitario * i.quantidade), 0)),
-              endereco_id: enderecoSelecionado.id, 
-              email_cliente:"cliente@venda.com"
-          };
-          console.log("DADOS QUE VÃO PARA O BACKEND:", JSON.stringify(dadosCheckout, null, 2));
+        const subtotal = Number(itensCarrinho.reduce((acc, i) => acc + (i.preco_unitario * i.quantidade), 0));
+        
+        // Escolhe o endpoint baseado no tipo de envio
+        const endpoint = tipoEnvio === 'retirada' 
+          ? 'http://127.0.0.1:5000/pagamentos/checkout-retirada'
+          : 'http://127.0.0.1:5000/pagamentos/checkout';
 
-          const response = await fetch("http://127.0.0.1:5000/pagamentos/checkout", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(dadosCheckout),
-          });
+        const dadosCheckout = {
+          pedido_id: pedidoAtivoId,
+          metodo_id: abaPagamento === 'site' ? 1 : 3,
+          tipo_envio: tipoEnvio,
+          subtotal: subtotal,
+          email_cliente: "cliente@venda.com"
+        };
 
-          const dadosDoretorno = await response.json();
+        // Só adiciona endereco_id se for entrega
+        if (tipoEnvio === 'entrega') {
+          dadosCheckout.endereco_id = enderecoSelecionado.id;
+        }
 
-          if (response.ok) {
-              if (abaPagamento === 'site' && dadosDoretorno.checkout_url) {
-                  setTimeout(() => {
-                      window.location.href = dadosDoretorno.checkout_url;
-                  }, 1500);
-              } else {
-                  setStatusPagamento('sucesso');
-                  setItensCarrinho([]);
-                  setPedidoAtivoId(null);
-              }
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dadosCheckout),
+        });
+
+        const dadosDoretorno = await response.json();
+
+        if (response.ok) {
+          if (tipoEnvio === 'retirada') {
+            // Fecha modal de pagamento e abre confirmação de retirada
+            setModalPagamentoAberto(false);
+            setPedidoConfirmadoRetirada({
+              pedido_id: dadosDoretorno.pedido_id,
+              numero_senha: dadosDoretorno.numero_senha,
+              pagamento_id: dadosDoretorno.pagamento_id
+            });
+            setModalConfirmacaoRetiradaAberto(true);
+          } else if (abaPagamento === 'site' && dadosDoretorno.checkout_url) {
+            setTimeout(() => {
+              window.location.href = dadosDoretorno.checkout_url;
+            }, 1500);
           } else {
-              console.error("Detalhes do erro:", dadosDoretorno.erro);
-              alert("Erro no checkout: " + dadosDoretorno.erro);
-              setStatusPagamento('erro');
+            setStatusPagamento('sucesso');
+            setItensCarrinho([]);
+            setPedidoAtivoId(null);
           }
-      } catch (erro) {
-          console.error("Erro na integração:", erro);
+        } else {
+          alert("Erro no checkout: " + dadosDoretorno.erro);
           setStatusPagamento('erro');
+        }
+      } catch (erro) {
+        console.error("Erro na integração:", erro);
+        setStatusPagamento('erro');
       }
   };
 
@@ -1059,245 +1097,182 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
           </div>
         </header>
 
-{/*================================================ PAGAMENTO================================================== */}
-      <main className="conteudo-dashboard" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-            {/* --- TELA DE PAGAMENTO --- */}
-              {telaAtual === 'pagamento' && (
-                <div className="container-pagamento">
-                    
-                    {/* COLUNA ESQUERDA: Informações do usuário e pagamento */}
-                    <div className="pagamento-coluna-esq">
-                    <h2 style={{ color: '#ff3b3b', marginBottom: '20px' }}>Finalize seu pedido</h2>
-                    
-                    {/* Abas Entrega / Retirada */}
-                    <div className="abas-simples">
-                        <span className="aba-ativa">Entrega</span>
-                        <span className="aba-inativa">Retirada</span>
+{/*================================================ PAGAMENTO ABA ================================================== */}
+    <main className="conteudo-dashboard" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* --- TELA DE PAGAMENTO --- */}
+      {telaAtual === 'pagamento' && (
+        <div className="container-pagamento">
+
+          {/* COLUNA ESQUERDA: Informações do usuário e pagamento */}
+          <div className="pagamento-coluna-esq">
+            <h2 style={{ color: '#ff3b3b', marginBottom: '20px' }}>Finalize seu pedido</h2>
+
+            {/* Abas Entrega / Retirada */}
+            <div className="abas-simples">
+              <span className={tipoEnvio === 'entrega' ? "aba-ativa" : "aba-inativa"} onClick={() => setTipoEnvio('entrega')} style={{ cursor: 'pointer' }}>Entrega</span>
+              <span className={tipoEnvio === 'retirada' ? "aba-ativa" : "aba-inativa"} onClick={() => setTipoEnvio('retirada')} style={{ cursor: 'pointer' }}>Retirada no Local</span>
+            </div>
+
+            {/* CONTEÚDO CONDICIONAL: Endereço (Entrega) ou Info Retirada */}
+            {tipoEnvio === 'entrega' ? (
+              <>
+
+                {/* Box de Endereço */}
+                <div className="box-endereco">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div className="icone-mapa-placeholder">🗺️</div>
+                    <div>
+                      <p style={{ fontWeight: 'bold', margin: 0 }}>{dadosEntrega.rua}</p>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{dadosEntrega.cidadeEstado}</p>
                     </div>
-
-                    {/* Box de Endereço */}
-                    <div className="box-endereco">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div className="icone-mapa-placeholder">🗺️</div>
-                        <div>
-                            {/* Antes era "Rua Bastilha 152" */}
-                            <p style={{ fontWeight: 'bold', margin: 0 }}>{dadosEntrega.rua}</p>
-                            {/* Antes era "Santo Andre - SP" */}
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{dadosEntrega.cidadeEstado}</p>
-                        </div>
-                        </div>
-                        <span onClick={buscarEnderecosDoUsuario} style={{ color: '#ff3b3b', cursor: 'pointer', fontWeight: 'bold' }}>Trocar</span>
-                    </div>
-
-                    {/* Box de Tempo de Entrega */}
-                        <h4 style={{ marginTop: '20px' }}>{dadosEntrega.tempoEstimado}</h4>
-                        <div style={{ display: 'flex', gap: '15px' }}>
-                            <div className="box-tempo ativo">
-                                <p className="tempo-titulo">Taxa de Entrega</p>
-                                <p className="tempo-preco">
-                                    {/* Lógica: Se o frete não for grátis, mostra o valor. Se for, mostra "Grátis" */}
-                                    {Number(dadosEntrega.taxaEntrega || 0)
-                                    .toFixed(2)
-                                    .replace('.', ',')}
-                                </p>
-                            </div>
-                            {/* ... (o outro box de retirada pode seguir a mesma lógica) ... */}
-                        </div>
-
-                    <hr className="linha-divisoria" />
-
-                    {/* Abas de Pagamento */}
-                <div className="abas-simples" style={{ marginTop: '20px' }}>
-                    <span 
-                        className={abaPagamento === 'site' ? "aba-ativa" : "aba-inativa"} 
-                        onClick={() => setAbaPagamento('site')}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        Pague pelo Site
-                    </span>
-                    <span 
-                        className={abaPagamento === 'entrega' ? "aba-ativa" : "aba-inativa"} 
-                        onClick={() => setAbaPagamento('entrega')}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        Pague na Entrega
-                    </span>
-                </div>
-
-              {/* === CONTEÚDO DINÂMICO DAS ABAS === */}
-              {abaPagamento === 'site' ? (
-                  // --- CONTEÚDO DA ABA: PAGUE PELO SITE ---
-                  <>
-                      {/* Box do PIX */}
-                      <div className="box-metodo-pagamento" onClick={() => setModalPixAberto(true)} style={{ cursor: 'pointer' }}>
-                          
-                          <span style={{ fontSize: '2rem', color: '#20b2aa' }}>❖</span>
-                          <div>
-                              <p style={{ fontWeight: 'bold', margin: 0 }}>Pague com o pix</p>
-                              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Use o QR code ou codigo copia e cola</p>
-                          </div>
-                      </div>
-
-                      {/* Box de Adicionar Cartão */}
-                      <div className="box-adicionar-cartao">
-                          <div>
-                              <h3 style={{ margin: '0 0 10px 0' }}>Pague com o Mercado Pago!</h3>
-                              <p style={{ color: '#666', fontSize: '0.9rem' }}>É seguro pratico e você não perde nenhum minuto</p>
-                              <button className="btn-outline-vermelho" onClick={handleFazerPedido}>Pagar com o Mercado Pago</button>
-                          </div>
-                          {/* Formiguinha adicionada aqui na aba do site! */}
-                          <img src={formigaImg} alt="Formiga pagando" style={{ width: '120px' }} />
-                      </div>
-                  </>
-              ) : (
-                    // --- CONTEÚDO DA ABA: PAGUE NA ENTREGA ---
-                  <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                      
-                      {/* Coluna 1: Dinheiro, Crédito, Débito */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
-                          <button className="btn-opcao-entrega">💵 Dinheiro</button>
-                          <button className="btn-opcao-entrega">💳 Credito</button>
-                          <button className="btn-opcao-entrega">💳 Debito</button>
-                      </div>
-                      
-                      {/* Coluna 2: Vale Alimentação e Formiguinha */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1, alignItems: 'center' }}>
-                          <button className="btn-opcao-entrega" style={{ width: '100%' }}>💳 Vale Alimentação</button>
-                          {/* Formiguinha mantida aqui na aba de entrega! */}
-                          <img src={formigaImg} alt="Formiga pagando na maquininha" style={{ width: '140px', marginTop: '10px' }} />
-                      </div>
-
-                  </div> )}
-                  {/* CPF / CNPJ */}
-                  <div style={{ marginTop: '20px' }}>
-                      <label style={{ color: '#ff3b3b', fontWeight: 'bold' }}>CPF/CNPJ na nota</label>
-                      <input type="text" className="input-cpf" />
                   </div>
-
-                  {/* Botão Final */}
-                  <button className="btn-fazer-pedido" onClick={handleFazerPedido}>Fazer Pedido</button>
-
-                  <button 
-                      onClick={cancelarPedido}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        marginTop: '15px',
-                        backgroundColor: '#fff',
-                        color: '#ff3b3b',
-                        border: '2px solid #ff3b3b',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#fff5f5';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#fff';
-                      }}
-                    >
-                      Cancelar Pedido
-                    </button>
+                  <span onClick={buscarEnderecosDoUsuario} style={{ color: '#ff3b3b', cursor: 'pointer', fontWeight: 'bold' }}>Trocar</span>
                 </div>
 
-        {/* COLUNA DIREITA: Resumo do Pedido (Mesmo visual do carrinho) */}
-        <div className="pagamento-coluna-dir" style={{ minWidth: '380px', width: '35%' }}>
+                {/* Box de Tempo de Entrega */}
+                <h4 style={{ marginTop: '20px' }}>{dadosEntrega.tempoEstimado}</h4>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div className="box-tempo ativo">
+                    <p className="tempo-titulo">Taxa de Entrega</p>
+                    <p className="tempo-preco">{dadosEntrega.isFreteGratis ? "Grátis" : `R$ ${Number(dadosEntrega.taxaEntrega || 0).toFixed(2).replace('.', ',')}`}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+
+                {/* Box de Retirada no Local */}
+                <div className="box-retirada" style={{ background: '#fff5f5', padding: '20px', borderRadius: '12px', marginTop: '20px', border: '2px solid #ff3b3b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <span style={{ fontSize: '2rem' }}>🏪</span>
+                    <div>
+                      <p style={{ fontWeight: 'bold', margin: 0, color: '#ff3b3b' }}>Retirada na Loja</p>
+                      <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: '#666' }}>Av. Paulista, 1000 - Centro</p>
+                      <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: '#666' }}>⏱️ Fica pronto em 20-30 minutos</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Box de Tempo de Retirada */}
+                <h4 style={{ marginTop: '20px' }}>Tempo estimado: 20-30 min</h4>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div className="box-tempo ativo">
+                    <p className="tempo-titulo">Taxa de Entrega</p>
+                    <p className="tempo-preco" style={{ color: '#2ecc71' }}>Grátis</p>
+                  </div>
+                </div>
+              </>
+            )}
+            <hr className="linha-divisoria" />
+
+            {/* Abas de Pagamento */}
+            <div className="abas-simples" style={{ marginTop: '20px' }}>
+              <span className={abaPagamento === 'site' ? "aba-ativa" : "aba-inativa"} onClick={() => setAbaPagamento('site')} style={{ cursor: 'pointer' }}>Pague pelo Site</span>
+              <span className={abaPagamento === 'entrega' ? "aba-ativa" : "aba-inativa"} onClick={() => setAbaPagamento('entrega')} style={{ cursor: 'pointer' }}>Pague na Entrega</span>
+            </div>
+
+            {/* === CONTEÚDO DINÂMICO DAS ABAS DE PAGAMENTO === */}
+            {abaPagamento === 'site' ? (
+              <>
+
+                {/* Box do PIX */}
+                <div className="box-metodo-pagamento" onClick={() => setModalPixAberto(true)} style={{ border: '2px solid #ff3333', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '2rem', color: '#20b2aa' }}>❖</span>
+                  <div>
+                    <p style={{ fontWeight: 'bold', margin: 0 }}>Pague com o PIX</p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Use o QR code ou codigo copia e cola</p>
+                  </div>
+                </div>
+
+                {/* Box de Adicionar Cartão */}
+                <div className="box-adicionar-cartao">
+                  <div>
+                    <h3 style={{ margin: '0 0 10px 0' }}>Pague com o Mercado Pago!</h3>
+                    <p style={{ color: '#666', fontSize: '0.9rem' }}>É seguro pratico e você não perde nenhum minuto</p>
+                    <button className="btn-outline-vermelho" onClick={handleFazerPedido}>Pagar com o Mercado Pago</button>
+                  </div>
+                  <img src={formigaImg} alt="Formiga pagando" style={{ width: '120px' }} />
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
+                  <button className="btn-opcao-entrega">💵 Dinheiro</button>
+                  <button className="btn-opcao-entrega">💳 Credito</button>
+                  <button className="btn-opcao-entrega">💳 Debito</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1, alignItems: 'center' }}>
+                  <button className="btn-opcao-entrega" style={{ width: '100%' }}>💳 Vale Alimentação</button>
+                  <img src={formigaImg} alt="Formiga pagando na maquininha" style={{ width: '140px', marginTop: '10px' }} />
+                </div>
+              </div>
+            )}
+
+            {/* CPF / CNPJ */}
+            <div style={{ marginTop: '20px' }}>
+              <label style={{ color: '#ff3b3b', fontWeight: 'bold' }}>CPF/CNPJ na nota</label>
+              <input type="text" className="input-cpf" />
+            </div>
+
+            {/* Botão Final */}
+            <button className="btn-fazer-pedido" onClick={handleFazerPedido}>Fazer Pedido</button>
+
+            {/* Botão Cancelar */}
+            <button onClick={cancelarPedido} style={{ width: '100%', padding: '12px', marginTop: '15px', backgroundColor: '#fff', color: '#ff3b3b', border: '2px solid #ff3b3b', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fff5f5'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; }}>Cancelar Pedido</button>
+          </div>
+
+          {/* COLUNA DIREITA: Resumo do Pedido */}
+          <div className="pagamento-coluna-dir" style={{ minWidth: '380px', width: '35%' }}>
             <div className="resumo-pedido-fixo">
-                <p className="texto-cinza" style={{ color: '#999', fontSize: '0.9rem', marginBottom: '5px' }}>
-                    Seu pedido em <span 
-                        style={{ color: '#ff3b3b', float: 'right', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
-                        onClick={() => setTelaAtual('tela-restaurante')}
-                    >
-                        Ver o cardápio
-                    </span>
-                </p>
-                
-                {/* Puxa o nome do restaurante do primeiro item do carrinho, se houver */}
-                <h4 className="nome-restaurante" style={{ color: '#a82424', marginBottom: '20px', fontSize: '1.2rem', margin: '0 0 15px 0' }}>
-                    {itensCarrinho.length > 0 ? itensCarrinho[0].lojaNome : "Restaurante POP!"}
-                </h4>
-                
-                <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', marginBottom: '15px' }} />
-                
-                {/* LISTA DINÂMICA DE ITENS */}
-                <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
-                    {itensCarrinho.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>Sua sacola está vazia.</p>
-                    ) : (
-                        itensCarrinho.map((item, index) => (
-                            <div className="item-pedido" key={index} style={{ marginBottom: '15px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#a82424' }}>
-                                    <span>{item.quantidade} x {item.nome_doce}</span>
-                                    <span style={{ color: '#333' }}>R$ {item.preco_unitario.toFixed(2).replace('.', ',')}</span>
-                                </div>
-                                
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '10px' }}>
-                                    <span style={{ color: '#3498db' }}>Item promocional</span>
-                                    <div style={{ display: 'flex', gap: '10px', color: '#ff3b3b', fontWeight: 'bold' }}>
-                                        <span style={{ cursor: 'pointer' }}>Editar</span>
-                                        <span 
-                                            style={{ cursor: 'pointer', color: '#333' }}
-                                            onClick={() => {
-                                                // Lógica para remover o item direto da tela de pagamento
-                                                const novoCarrinho = [...itensCarrinho];
-                                                novoCarrinho.splice(index, 1);
-                                                setItensCarrinho(novoCarrinho);
-                                            }}
-                                        >
-                                            Remover
-                                        </span>
-                                    </div>
-                                </div>
-                                <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '15px 0 0 0' }} />
-                            </div>
-                        ))
-                    )}
-                </div>
-        
-        {/* RESUMO DE VALORES (CÁLCULO AUTOMÁTICO) */}
-        <div style={{ marginTop: '15px' }}>
-            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: '#666' }}>
-                <span className="texto-cinza">SubTotal</span>
-                <span style={{ fontWeight: 'bold', color: '#333' }}>
-                    R$ {itensCarrinho.reduce((acc, i) => acc + (i.preco_unitario * i.quantidade), 0).toFixed(2).replace('.', ',')}
-                </span>
-            </div>
-            
-            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', color: '#666' }}>
-                <span className="texto-cinza">Taxa de entrega</span>
-                <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>
-                    {dadosEntrega.isFreteGratis
-                      ? "Grátis"
-                      : `R$ ${Number(dadosEntrega.taxaEntrega || 0)
-                          .toFixed(2)
-                          .replace('.', ',')}`
-                    }
-                </span>
-            </div>
-            
-            <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '20px', color: '#000' }}>
-                <span>Total</span>
-                <span>
-                    R$ {(
-                        itensCarrinho.reduce(
-                          (acc, i) => acc + (Number(i.preco_unitario) * Number(i.quantidade)),
-                          0
-                        ) + 
-                        (dadosEntrega.isFreteGratis
-                          ? 0
-                          : Number(dadosEntrega.taxaEntrega || 0))
-                    ).toFixed(2).replace('.', ',')}
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-                </div>
-                )}
+              <p className="texto-cinza" style={{ color: '#999', fontSize: '0.9rem', marginBottom: '5px' }}>
+                Seu pedido em <span style={{ color: '#ff3b3b', float: 'right', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setTelaAtual('tela-restaurante')}>Ver o cardápio</span>
+              </p>
+              <h4 className="nome-restaurante" style={{ color: '#a82424', marginBottom: '20px', fontSize: '1.2rem', margin: '0 0 15px 0' }}>{itensCarrinho.length > 0 ? itensCarrinho[0].lojaNome : "Restaurante POP!"}</h4>
+              <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', marginBottom: '15px' }} />
 
+              {/* LISTA DINÂMICA DE ITENS */}
+              <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
+                {itensCarrinho.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>Sua sacola está vazia.</p>
+                ) : (
+                  itensCarrinho.map((item, index) => (
+                    <div className="item-pedido" key={index} style={{ marginBottom: '15px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#a82424' }}>
+                        <span>{item.quantidade} x {item.nome_doce}</span>
+                        <span style={{ color: '#333' }}>R$ {item.preco_unitario.toFixed(2).replace('.', ',')}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '10px' }}>
+                        <span style={{ color: '#3498db' }}>Item promocional</span>
+                        <div style={{ display: 'flex', gap: '10px', color: '#ff3b3b', fontWeight: 'bold' }}>
+                          <span style={{ cursor: 'pointer' }}>Editar</span>
+                          <span style={{ cursor: 'pointer', color: '#333' }} onClick={() => { removerItemDoBanco(item.id); }}>Remover</span>
+                        </div>
+                      </div>
+                      <hr className="linha-divisoria" style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '15px 0 0 0' }} />
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              {/* RESUMO DE VALORES (CÁLCULO AUTOMÁTICO) */}
+              <div style={{ marginTop: '15px' }}>
+                <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: '#666' }}>
+                  <span className="texto-cinza">SubTotal</span>
+                  <span style={{ fontWeight: 'bold', color: '#333' }}>R$ {itensCarrinho.reduce((acc, i) => acc + (i.preco_unitario * i.quantidade), 0).toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', color: '#666' }}>
+                  <span className="texto-cinza">Taxa de entrega</span>
+                  <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>{tipoEnvio === 'retirada' ? "Grátis" : (dadosEntrega.isFreteGratis ? "Grátis" : `R$ ${Number(dadosEntrega.taxaEntrega || 0).toFixed(2).replace('.', ',')}`)}</span>
+                </div>
+                <div className="linha-resumo" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '20px', color: '#000' }}>
+                  <span>Total</span>
+                  <span>R$ {(itensCarrinho.reduce((acc, i) => acc + (Number(i.preco_unitario) * Number(i.quantidade)), 0) + (tipoEnvio === 'retirada' ? 0 : (dadosEntrega.isFreteGratis ? 0 : Number(dadosEntrega.taxaEntrega || 0)))).toFixed(2).replace('.', ',')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 {/*===================================DASHBOARD============================================================ */}
             {/* --- DASHBOARD --- */}
             {telaAtual === 'dashboard' && (
@@ -1531,7 +1506,7 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                                    <button onClick={handleDespacharPedido} style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                                    <button onClick={() => setModalAcompanharAberto(true)} style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
                                         Acompanhar entrega
                                     </button>
                                     
@@ -1770,24 +1745,27 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               
               <h2 style={{ fontSize: '1.4rem', margin: '0 0 10px 0', textAlign: 'center', color: '#000', fontWeight: 'bold' }}>
-                *{produtoSelecionado.nome}*
+                {produtoSelecionado.nome}
               </h2>
               <p style={{ color: '#555', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '500' }}>
-                Descrição do produto
+                {produtoSelecionado.descricao}
               </p>
-              <h3 style={{ fontSize: '1.4rem', color: '#555', margin: '0 0 20px 0' }}>
+              <h3 style={{ fontSize: '1.4rem', color: '#ff3b3b', margin: '0 0 20px 0' }}>
                 R${produtoSelecionado.preco.toFixed(2).replace('.', ',')}
               </h3>
 
               {/* Caixa de Informações da Loja */}
               <div style={{ border: '2px solid #aaa', borderRadius: '8px', padding: '10px 15px', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #ccc', paddingBottom: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 'bold', color: '#555' }}>Nome da loja</span>
-                  <span style={{ color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>*Avaliação*</span>
+                  <span style={{ fontWeight: 'bold', color: '#555' }}>{lojaSelecionada?.nome || 'Restaurante'}</span>
+                  <span style={{ color: '#1ebb0a', fontSize: '0.9rem', fontWeight: 'bold' }}>★ {lojaSelecionada?.avaliacao || '4.8'}</span>
                 </div>
-                <div style={{ color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                  *Distancia*
-                </div>
+                  <div style={{ color: '#555', fontSize: '0.9rem', fontWeight: '500', display: 'flex', alignItems: 'center',gap: '5px'}}>
+                    <span>Tempo de espera: </span>
+                    <span>
+                      {dadosEntrega?.tempoEstimado || '30-40 min'}
+                    </span>
+                  </div>
               </div>
 
               {/* Campo de Comentários */}
@@ -2341,6 +2319,38 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
         setTelaAtual('pedidos');
       }}
     />
+    <ModalAcompanharEntrega 
+      isOpen={modalAcompanharAberto}
+      onClose={() => setModalAcompanharAberto(false)}
+      pedidoAtivoId={pedidoAtual?.id} // Passa o ID do pedido atual
+    />
+
+    <ModalConfirmacaoRetirada 
+        isOpen={modalConfirmacaoRetiradaAberto}
+        onClose={() => {
+          setModalConfirmacaoRetiradaAberto(false);
+          setItensCarrinho([]);
+          setPedidoAtivoId(null);
+        }}
+        pedidoConfirmado={pedidoConfirmadoRetirada}
+        onVerPainel={() => {
+          setModalConfirmacaoRetiradaAberto(false);
+          setModalPainelSenhasAberto(true);
+        }}
+      />
+      
+      <ModalPainelSenhas 
+        isOpen={modalPainelSenhasAberto}
+        onClose={() => {
+          setModalPainelSenhasAberto(false);
+          setItensCarrinho([]);
+          setPedidoAtivoId(null);
+          localStorage.removeItem('pop_pedido_id');
+          setTelaAtual('pedidos');
+        }}
+        pedidoId={pedidoConfirmadoRetirada?.pedido_id}
+        numeroSenha={pedidoConfirmadoRetirada?.numero_senha}
+      />
 
     <ToastContainer />
           </>
