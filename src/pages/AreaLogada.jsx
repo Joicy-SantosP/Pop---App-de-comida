@@ -32,7 +32,9 @@ function AreaLogada({
   setQuantidadeProduto,passoEndereco,tipoFavorito,
   setTipoFavorito,
 }) {
-
+//-------------------------------
+ // essa pagina é a pagina de desmembramento do codigo pois essa parte que era muito grante estava travando o app.jsx na hora da integração
+//----------------------------------
     // Dentro do componente, antes do return principal:
 console.log("O componente renderizou! A tela atual é:", telaAtual);
 
