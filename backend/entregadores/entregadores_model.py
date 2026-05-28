@@ -16,9 +16,10 @@ class Entregador(db.Model):
     email_token_expiration = db.Column(db.DateTime, nullable=True)
     email_verified = db.Column(db.Boolean, default=False)
     
-    email_verified = db.Column(db.Boolean, default=True)
+    # 🔄 NOVO: Campo para controle de disponibilidade
+    disponivel = db.Column(db.Boolean, default=True)
     
-    def __init__(self,nome, cpf, email, telefone, veiculo, status, foto=None):
+    def __init__(self, nome, cpf, email, telefone, veiculo, status, foto=None):
         self.nome = nome
         self.cpf = cpf
         self.email = email
@@ -26,15 +27,18 @@ class Entregador(db.Model):
         self.veiculo = veiculo
         self.status = status
         self.foto = foto
+        self.disponivel = True
     
     def to_dict(self):
-        return{
-            'id' : self.id,
-            'nome' : self.nome,
-            'cpf' : self.cpf,
-            'email' : self.email,
-            'telefone' : self.telefone,
-            'veiculo' : self.veiculo,
-            'status' : self.status,
-            'foto' : self.foto
+        return {
+            'id': self.id,
+            'nome': self.nome,
+            'cpf': self.cpf,
+            'email': self.email,
+            'telefone': self.telefone,
+            'veiculo': self.veiculo,
+            'status': self.status,
+            'foto': self.foto,
+            'disponivel': self.disponivel,
+            'total_entregas': len(self.entregas) if self.entregas else 0
         }

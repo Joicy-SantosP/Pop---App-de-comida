@@ -49,7 +49,7 @@ def cancelar_pedido(id):
     
 @pedidos_blueprint.route('/pedidos/<int:id>/status', methods=["GET"])
 def acompanhar_pedido(id):
-    pedido = db.session.get(Pedido,id)
+    pedido = db.session.get(Pedido, id)
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
@@ -59,14 +59,23 @@ def acompanhar_pedido(id):
         
         status_original = pedido.status
         
+        # Transição: Em Preparação -> Pronto
         if minutos_passados >= pedido.minutos_preparo and pedido.status == "Em preparacao":
             pedido.status = "Pronto"
 
-        if minutos_passados >= (pedido.minutos_preparo + 2) and pedido.status == "Pronto":
-            pedido.status = "Em transito"
+        # 🔄 CORREÇÃO: Verificar tipo de entrega antes de ir para "Em trânsito"
+        if pedido.status == "Pronto":
+            # Se for entrega (delivery), após 2 minutos vai para "Em trânsito"
+            if pedido.tipo_retirada == "entrega":
+                if minutos_passados >= (pedido.minutos_preparo + 2):
+                    pedido.status = "Em transito"
+            # Se for retirada, NÃO vai para "Em trânsito", fica em "Pronto"
+            # A transição para "Entregue" será feita manualmente pelo estabelecimento
             
-        if minutos_passados >= (pedido.minutos_preparo + 2 + pedido.minutos_entrega) and pedido.status == "Em transito":
-            pedido.status = "Entregue"
+        # Transição: Em Trânsito -> Entregue (apenas para delivery)
+        if pedido.tipo_retirada == "entrega":
+            if minutos_passados >= (pedido.minutos_preparo + 2 + pedido.minutos_entrega) and pedido.status == "Em transito":
+                pedido.status = "Entregue"
 
         if status_original != pedido.status:
             db.session.commit()
@@ -93,3 +102,43 @@ def forcar_pronto(id):
 def listar_pedidos_usuario(user_id):
     pedidos = Pedido.query.filter_by(usuario_id=user_id).order_by(Pedido.id.desc()).all()
     return jsonify([p.to_dict() for p in pedidos]), 200
+
+@pedidos_blueprint.route('/pedidos/<int:id>/confirmar-retirada', methods=['PATCH'])
+def confirmar_retirada(id):
+    """Endpoint específico para confirmar retirada de pedidos"""
+    pedido = db.session.get(Pedido, id)
+    
+    if not pedido:
+        return jsonify({"erro": "Pedido não encontrado"}), 404
+    
+    # 🔄 CORRIGIDO: Verifica o campo correto (tipo_retirada em vez de tipo_entrega)
+    if not hasattr(pedido, 'tipo_retirada') or pedido.tipo_retirada != 'retirada':
+        return jsonify({"erro": "Este pedido não é para retirada"}), 400
+    
+    # 🔄 CORRIGIDO: Verifica status OU status_preparo
+    status_pronto = (
+        pedido.status == "Pronto" or 
+        getattr(pedido, 'status_preparo', '') == 'pronto'
+    )
+    
+    if not status_pronto:
+        return jsonify({
+            "erro": f"Pedido não está pronto para retirada. Status atual: {pedido.status}",
+            "status": pedido.status,
+            "status_preparo": getattr(pedido, 'status_preparo', 'não definido')
+        }), 400
+    
+    try:
+        # Atualiza ambos os campos de status
+        pedido.status = "Entregue"
+        if hasattr(pedido, 'status_preparo'):
+            pedido.status_preparo = 'finalizado'
+        
+        db.session.commit()
+        return jsonify({
+            "mensagem": "Retirada confirmada com sucesso! 🍩",
+            "status": pedido.status
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"erro": str(e)}), 500

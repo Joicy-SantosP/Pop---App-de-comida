@@ -1,97 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import imgFormigaFeliz from '../assets/formigafeliz.png';
 
-function ModalAcompanharEntrega({ isOpen, onClose, pedidoAtivoId }) {
-  const [indiceAtual, setIndiceAtual] = useState(0);
-  const [mensagem, setMensagem] = useState('');
-  const [entregue, setEntregue] = useState(false);
-  const [mostrarInputCodigo, setMostrarInputCodigo] = useState(false);
-  const [codigoConfirmacao, setCodigoConfirmacao] = useState('');
-  const [erroCodigo, setErroCodigo] = useState('');
-
-  const estagios = [
-    { label: 'Preparando', icone: '🍽️' },
-    { label: 'Pronto', icone: '🧁' },
-    { label: 'Saiu para entrega', icone: '🛵' },
-    { label: 'Próximo', icone: '📍' },
-    { label: 'Entregue', icone: '✅' }
-  ];
+const ModalPainelSenhas = ({ isOpen, onClose, pedidoId, numeroSenha }) => {
+  const [pedidosProntos, setPedidosProntos] = useState([]);
+  const [meuPedidoPronto, setMeuPedidoPronto] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setIndiceAtual(0);
-      setEntregue(false);
-      setMostrarInputCodigo(false);
-      setCodigoConfirmacao('');
-      setErroCodigo('');
-      avancarEstagio();
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
 
-  const avancarEstagio = async () => {
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/pedido/${pedidoAtivoId}/simular-entrega`,
-        { method: 'POST' }
-      );
-      
-      const dados = await response.json();
-      
-      if (response.ok) {
-        setIndiceAtual(dados.indice);
-        setMensagem(dados.mensagem);
-        
-        // Se chegou no penúltimo estágio (Próximo), mostra o input de código
-        if (dados.indice === dados.total - 2) {
-          setMostrarInputCodigo(true);
-          return; // Para e espera o código
-        }
-        
-        // Se não chegou ao fim, agenda próximo avanço
-        if (dados.indice < dados.total - 1) {
-          setTimeout(() => avancarEstagio(), 10000); // 3 segundos entre estágios
-        } else {
-          setEntregue(true);
-        }
+    const buscarPedidosProntos = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/painel/pedidos-prontos');
+        const data = await response.json();
+        setPedidosProntos(data);
+        const encontrado = data.find(p => p.numero_senha === numeroSenha);
+        setMeuPedidoPronto(!!encontrado);
+      } catch (error) {
+        console.error('Erro ao buscar painel:', error);
       }
-    } catch (error) {
-      console.error("Erro na simulação:", error);
-    }
-  };
+    };
 
-  const confirmarEntrega = async () => {
-    if (!codigoConfirmacao.trim()) {
-      setErroCodigo('Digite o código de confirmação');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/pedido/${pedidoAtivoId}/confirmar-entrega`,
-        { 
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigo_verificacao: codigoConfirmacao })
-        }
-      );
-
-      const dados = await response.json();
-
-      if (response.ok) {
-        // Avança para o último estágio (Entregue)
-        setIndiceAtual(estagios.length - 1);
-        setMensagem('Pedido entregue! Bom apetite! 🎉');
-        setEntregue(true);
-        setMostrarInputCodigo(false);
-        setErroCodigo('');
-      } else {
-        setErroCodigo(dados.erro || 'Código inválido');
-      }
-    } catch (error) {
-      console.error("Erro ao confirmar entrega:", error);
-      setErroCodigo('Erro de conexão');
-    }
-  };
+    buscarPedidosProntos();
+    const interval = setInterval(buscarPedidosProntos, 5000);
+    return () => clearInterval(interval);
+  }, [isOpen, numeroSenha]);
 
   if (!isOpen) return null;
 
@@ -102,179 +33,158 @@ function ModalAcompanharEntrega({ isOpen, onClose, pedidoAtivoId }) {
       justifyContent: 'center', alignItems: 'center', zIndex: 99999
     }}>
       <div style={{ 
-        backgroundColor: '#ffe6e8', padding: '40px', borderRadius: '20px',
-        textAlign: 'center', width: '500px', maxWidth: '90%',
+        backgroundColor: '#ffe6e8', 
+        padding: '40px', 
+        borderRadius: '20px',
+        textAlign: 'center', 
+        width: '600px', 
+        maxWidth: '90%',
+        maxHeight: '85vh',
+        overflow: 'auto',
         boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
       }}>
         
         {/* Título */}
-        <h3 style={{ color: '#000000', marginBottom: '30px', fontSize: '1.3rem' }}>
-          Acompanhando Entrega
+        <h3 style={{ color: '#000', marginBottom: '10px', fontSize: '1.4rem' }}>
+          🍬 Painel de Retirada - Pop Doces
         </h3>
-
-        {/* Mensagem */}
-        <p style={{ 
-          color: '#666', fontSize: '1rem', marginBottom: '30px',
-          minHeight: '24px'
-        }}>
-          {mensagem || 'Iniciando...'}
+        <p style={{ color: '#999', margin: '0 0 25px 0', fontSize: '0.9rem' }}>
+          Acompanhe sua senha e retire seu pedido no balcão
         </p>
 
-        {/* Input de Código de Confirmação */}
-        {mostrarInputCodigo && (
-          <div style={{ 
-            backgroundColor: '#fff', 
-            padding: '20px', 
-            borderRadius: '10px',
-            marginBottom: '20px',
-            border: '2px solid #e96671'
-          }}>
-            <p style={{ 
-              color: '#333', 
-              fontWeight: 'bold', 
-              marginBottom: '15px',
-              fontSize: '0.95rem'
-            }}>
-              🔐 O entregador chegou! Digite o código de confirmação:
-            </p>
-            <input 
-              type="text"
-              value={codigoConfirmacao}
-              onChange={(e) => {
-                setCodigoConfirmacao(e.target.value);
-                setErroCodigo('');
-              }}
-              placeholder="Digite o código"
-              maxLength={6}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '8px',
-                border: `2px solid ${erroCodigo ? '#ff3b3b' : '#e0e0e0'}`,
-                textAlign: 'center',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                letterSpacing: '3px',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-            {erroCodigo && (
-              <p style={{ 
-                color: '#ff3b3b', 
-                fontSize: '0.85rem', 
-                marginTop: '8px',
-                fontWeight: 'bold'
-              }}>
-                ❌ {erroCodigo}
-              </p>
-            )}
-            <button 
-              onClick={confirmarEntrega}
-              style={{ 
-                width: '100%',
-                marginTop: '15px',
-                padding: '12px',
-                backgroundColor: '#27ae60',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '1rem'
-              }}
-            >
-              ✅ Confirmar Entrega
-            </button>
-          </div>
-        )}
-
-        {/* Barra de Status */}
-        <div style={{ 
-          display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', marginBottom: '15px',
-          position: 'relative', padding: '0 20px'
+        {/* 🔑 Card da Senha do Cliente */}
+        <div style={{
+          backgroundColor: '#fff',
+          border: `3px solid ${meuPedidoPronto ? '#27ae60' : '#e96671'}`,
+          borderRadius: '15px',
+          padding: '20px',
+          marginBottom: '25px',
+          transition: 'all 0.3s ease'
         }}>
-          {/* Linha de fundo */}
-          <div style={{
-            position: 'absolute', top: '25px', left: '50px', right: '50px',
-            height: '4px', backgroundColor: '#e0e0e0', zIndex: 0
-          }} />
-          
-          {/* Linha preenchida */}
-          <div style={{
-            position: 'absolute', top: '25px', left: '50px',
-            height: '4px', backgroundColor: '#e96671', zIndex: 1,
-            width: `${(indiceAtual / (estagios.length - 1)) * 100}%`,
-            transition: 'width 0.5s ease'
-          }} />
-
-          {/* Bolinhas */}
-          {estagios.map((estagio, index) => (
-            <div key={index} style={{ 
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', zIndex: 2,
-              width: '70px'
-            }}>
-              <div style={{
-                width: '50px', height: '50px', borderRadius: '50%',
-                backgroundColor: index <= indiceAtual ? '#f3afb5' : '#e0e0e0',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.5rem', transition: 'all 0.5s ease',
-                transform: index === indiceAtual ? 'scale(1.2)' : 'scale(1)',
-                boxShadow: index <= indiceAtual ? '0 4px 10px #e96671' : 'none'
-              }}>
-                {index < indiceAtual ? '✓' : estagio.icone}
-              </div>
-              <span style={{ 
-                fontSize: '0.7rem', marginTop: '15px',
-                color: index <= indiceAtual ? '#000000' : '#999',
-                fontWeight: index === indiceAtual ? 'bold' : 'normal'
-              }}>
-                {estagio.label}
-              </span>
-            </div>
-          ))}
+          <p style={{ color: '#666', margin: '0 0 5px 0', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            🎫 SUA SENHA DE RETIRADA
+          </p>
+          <h1 style={{
+            color: meuPedidoPronto ? '#27ae60' : '#e96671',
+            fontSize: '4.5rem',
+            margin: '5px 0',
+            fontFamily: 'monospace',
+            letterSpacing: '12px',
+            fontWeight: 'bold'
+          }}>
+            {numeroSenha}
+          </h1>
+          <p style={{ color: '#999', margin: '5px 0 0 0', fontSize: '0.85rem' }}>
+            Pedido #{pedidoId}
+          </p>
+          {meuPedidoPronto ? (
+            <p style={{ color: '#27ae60', margin: '10px 0 0 0', fontSize: '0.9rem', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>
+              ✅ Seu pedido está pronto! Vá até o balcão!
+            </p>
+          ) : (
+            <p style={{ color: '#f39c12', margin: '10px 0 0 0', fontSize: '0.85rem' }}>
+              ⏳ Aguardando pedido ficar pronto...
+            </p>
+          )}
         </div>
 
-        {/* Aguardando código */}
-        {mostrarInputCodigo && !entregue && (
-          <p style={{ color: '#e96671', fontSize: '0.85rem', marginTop: '10px', fontWeight: 'bold' }}>
-            ⚠️ Aguardando confirmação do código...
-          </p>
-        )}
+        {/* 📋 Grid de Senhas Prontas */}
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '15px',
+          padding: '20px',
+          border: '2px solid #f3afb5'
+        }}>
+          <h4 style={{ color: '#e96671', margin: '0 0 15px 0', fontSize: '1rem' }}>
+            📋 Senhas Prontas para Retirada
+          </h4>
+          
+          {pedidosProntos.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px 0' }}>
+              <p style={{ color: '#999', fontSize: '1rem', margin: 0 }}>
+                Nenhum pedido pronto no momento
+              </p>
+              <p style={{ color: '#bbb', fontSize: '0.8rem', margin: '5px 0 0 0' }}>
+                As senhas aparecerão aqui automaticamente
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+              gap: '15px'
+            }}>
+              {pedidosProntos.map((pedido, index) => (
+                <div key={index} style={{
+                  backgroundColor: pedido.numero_senha === numeroSenha ? '#ffe6e8' : '#fafafa',
+                  border: pedido.numero_senha === numeroSenha ? '3px solid #e96671' : '2px solid #e0e0e0',
+                  borderRadius: '12px',
+                  padding: '15px 10px',
+                  textAlign: 'center',
+                  transform: pedido.numero_senha === numeroSenha ? 'scale(1.05)' : 'scale(1)',
+                  transition: 'all 0.3s ease',
+                  boxShadow: pedido.numero_senha === numeroSenha ? '0 4px 15px rgba(233, 102, 113, 0.3)' : 'none'
+                }}>
+                  <p style={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 'bold', 
+                    margin: '0',
+                    color: pedido.numero_senha === numeroSenha ? '#e96671' : '#333',
+                    fontFamily: 'monospace',
+                    letterSpacing: '3px'
+                  }}>
+                    {pedido.numero_senha}
+                  </p>
+                  <p style={{ 
+                    fontSize: '0.8rem',
+                    margin: '8px 0 0 0',
+                    color: '#666'
+                  }}>
+                    {pedido.nome_cliente}
+                  </p>
+                  {pedido.numero_senha === numeroSenha && (
+                    <p style={{
+                      margin: '5px 0 0 0',
+                      fontSize: '0.7rem',
+                      color: '#e96671',
+                      fontWeight: 'bold'
+                    }}>
+                      ⭐ SEU PEDIDO
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Tempo estimado */}
-        {!entregue && !mostrarInputCodigo && (
-          <p style={{ color: '#999', fontSize: '0.8rem', marginTop: '20px' }}>
-            ⏱️ Atualizando automaticamente...
-          </p>
-        )}
-
-        {/* Entregue - Formiguinha Feliz */}
-        {entregue && (
-          <div style={{ marginTop: '20px' }}>
-            <img src={imgFormigaFeliz} alt="Entregue!" style={{ width: '150px' }} />
-            <p style={{ color: '#ff3b3b', fontWeight: 'bold', fontSize: '1.1rem' }}>
-              🎉 Entrega concluída! Bom apetite!
-            </p>
-          </div>
-        )}
+        {/* Rodapé */}
+        <p style={{ color: '#999', margin: '20px 0 15px 0', fontSize: '0.75rem' }}>
+          ⏱️ Atualizando automaticamente a cada 5 segundos
+        </p>
 
         {/* Botão Fechar */}
         <button 
           onClick={onClose}
           style={{ 
-            padding: '10px 30px', backgroundColor: '#ff3b3b', color: '#fff',
-            border: 'none', borderRadius: '20px', cursor: 'pointer',
-            fontWeight: 'bold', marginTop: '25px', fontSize: '0.9rem'
+            padding: '10px 30px', 
+            backgroundColor: '#e96671', 
+            color: '#fff',
+            border: 'none', 
+            borderRadius: '20px', 
+            cursor: 'pointer',
+            fontWeight: 'bold', 
+            fontSize: '0.9rem',
+            transition: 'all 0.2s'
           }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#d4555f'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#e96671'}
         >
-          {entregue ? 'Fechar' : 'Fechar'}
+          Fechar Painel
         </button>
       </div>
     </div>
   );
-}
+};
 
-export default ModalAcompanharEntrega;
+export default ModalPainelSenhas;

@@ -88,9 +88,13 @@ class Pedido(db.Model):
             "restaurante_id": self.restaurante_id,
             "status": self.status,
             "total": self.total,
-
+            "tipo_retirada": self.tipo_retirada,  # 🔄 NOVO
+            "status_preparo": self.status_preparo,  # 🔄 NOVO
+            "numero_senha": self.numero_senha,  # 🔄 NOVO
+            "codigo_confirmacao": self.codigo_confirmacao,  # 🔄 NOVO
             "restaurante_nome": self.restaurante.nome,
-
+            "data": self.data_preparo_inicio.strftime('%d/%m/%Y %H:%M') if self.data_preparo_inicio else None,  # 🔄 NOVO
+            
             "itens": [
                 {
                     "id": item.id,
@@ -98,12 +102,9 @@ class Pedido(db.Model):
                     "quantidade": item.quantidade,
                     "preco_unitario": item.preco_unitario,
                     "subtotal": item.subtotal(),
-
-                    # pega produto pelo nome
                     "imagem": Produto.query.filter_by(nome=item.nome_doce).first().imagem
                     if Produto.query.filter_by(nome=item.nome_doce).first()
                     else None,
-
                     "lojaNome": self.restaurante.nome
                 }
                 for item in self.itens

@@ -95,6 +95,8 @@ function AreaLogada({
   const [pedidoConfirmadoRetirada, setPedidoConfirmadoRetirada] = useState(null);
   const [modalConfirmacaoRetiradaAberto, setModalConfirmacaoRetiradaAberto] = useState(false);
   const [modalPainelSenhasAberto, setModalPainelSenhasAberto] = useState(false);
+  const [infoEntregador, setInfoEntregador] = useState(null);
+  const [usuario, setUsuario] = useState(null);
 
   /* ==================================================
    PREÇOS
@@ -520,16 +522,26 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
         const dadosDoretorno = await response.json();
 
         if (response.ok) {
+          // 🔄 Para retirada: NÃO mostra senha agora, só redireciona para pagamento
           if (tipoEnvio === 'retirada') {
-            // Fecha modal de pagamento e abre confirmação de retirada
-            setModalPagamentoAberto(false);
-            setPedidoConfirmadoRetirada({
-              pedido_id: dadosDoretorno.pedido_id,
-              numero_senha: dadosDoretorno.numero_senha,
-              pagamento_id: dadosDoretorno.pagamento_id
-            });
-            setModalConfirmacaoRetiradaAberto(true);
-          } else if (abaPagamento === 'site' && dadosDoretorno.checkout_url) {
+            if (dadosDoretorno.checkout_url) {
+              // Tem link de pagamento - redireciona
+              setTimeout(() => {
+                window.location.href = dadosDoretorno.checkout_url;
+              }, 1500);
+            } else {
+              // Pagamento na entrega/loja - vai direto
+              setModalPagamentoAberto(false);
+              setStatusPagamento('sucesso');
+              setItensCarrinho([]);
+              setPedidoAtivoId(null);
+              localStorage.removeItem('pop_pedido_id');
+              toast.success('✅ Pedido confirmado! Aguarde a confirmação do pagamento.');
+              setTelaAtual('pedidos');
+            }
+          } 
+          // Para entrega: comportamento normal
+          else if (abaPagamento === 'site' && dadosDoretorno.checkout_url) {
             setTimeout(() => {
               window.location.href = dadosDoretorno.checkout_url;
             }, 1500);
@@ -565,22 +577,29 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                   endereco_id: enderecoSelecionado.id,
-                  entregador_codigo: 99,
-                  taxa: 5.0
+                  // 🔄 ALTERADO: Agora envia entregador_id (opcional - backend busca automático se não enviar)
+                  // entregador_id: 1, // Descomente se quiser escolher um entregador específico
+                  taxa: dadosEntrega.taxaEntrega || 5.0
               })
           });
 
           const dados = await response.json();
 
           if (response.ok) {
-              alert("Pedido despachado!");
+              // 🔄 NOVO: Mostra informações do entregador
+              if (dados.entregador) {
+                  toast.success(`🛵 Entregador ${dados.entregador.nome} a caminho!`);
+              } else {
+                  toast.success("Pedido despachado!");
+              }
               await carregarHistoricoPedidos(); 
           } else {
-              alert(dados.erro);
+              toast.error(dados.erro || "Erro ao despachar pedido");
               await carregarHistoricoPedidos();
           }
       } catch (error) {
           console.error("Erro no despacho:", error);
+          toast.error("Erro de conexão ao despachar pedido");
       }
   };
 
@@ -617,23 +636,30 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
    STATUS PEDIDOS
   ================================================== */
   const carregarHistoricoPedidos = async () => {
-    const usuarioId = localStorage.getItem('usuario_id');
-    if (!usuarioId) return;
+      const usuarioId = localStorage.getItem('usuario_id');
+      if (!usuarioId) return;
 
-    try {
-      const response = await fetch(`http://localhost:5000/usuarios/${usuarioId}/pedidos`);
-      const dados = await response.json();
+      try {
+          const response = await fetch(`http://localhost:5000/usuarios/${usuarioId}/pedidos`);
+          const dados = await response.json();
 
-      if (response.ok) {
-        const atual = dados.find(p => !['Entregue', 'CANCELADO'].includes(p.status));
-        const anteriores = dados.filter(p => ['Entregue', 'CANCELADO'].includes(p.status));
+          if (response.ok) {
+              const atual = dados.find(p => !['Entregue', 'CANCELADO'].includes(p.status));
+              const anteriores = dados.filter(p => ['Entregue', 'CANCELADO'].includes(p.status));
 
-        setPedidoAtual(atual || null);
-        setPedidosAnteriores(anteriores);
+              setPedidoAtual(atual || null);
+              setPedidosAnteriores(anteriores);
+              
+              // 🔄 NOVO: Busca informações do entregador se pedido estiver em trânsito
+              if (atual && atual.status === 'Em Trânsito' && atual.detalhes_entrega) {
+                  setInfoEntregador(atual.detalhes_entrega.entregador || null);
+              } else {
+                  setInfoEntregador(null);
+              }
+          }
+      } catch (error) {
+          console.error("Erro ao buscar histórico:", error);
       }
-    } catch (error) {
-      console.error("Erro ao buscar histórico:", error);
-    }
   };
 
   const atualizarPedido = async () => {
@@ -688,6 +714,37 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
     const taxa = pedido.taxa_entrega || pedido.pagamento?.taxa_entrega || 0;
     return subtotal + taxa;
   };
+
+  /* ==================================================
+   RETIRADA
+  ================================================== */
+  const confirmarRetirada = async () => {
+      if (!pedidoAtual) return;
+      
+      try {
+          const response = await fetch(
+              `http://127.0.0.1:5000/pedidos/${pedidoAtual.id}/confirmar-retirada`,
+              { 
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ senha: pedidoAtual.numero_senha })
+              }
+          );
+          
+          const dados = await response.json();
+          
+          if (response.ok) {
+              toast.success('✅ Pedido retirado! Bom apetite! 🍩');
+              await carregarHistoricoPedidos();
+          } else {
+              toast.error(dados.erro || 'Erro ao confirmar retirada');
+          }
+      } catch (error) {
+          console.error("Erro:", error);
+          toast.error('Erro de conexão');
+      }
+  };
+
 
   /*==================================================
   CANCELAR PEDIDO
@@ -871,6 +928,27 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
     carregarDados();
   }, []);
 
+  useEffect(() => {
+    const buscarUsuario = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return;
+      
+      try {
+        const response = await fetch(`http://localhost:5000/usuarios/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUsuario(data);
+          // Opcional: salvar no localStorage para não buscar sempre
+          localStorage.setItem('usuario', JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+      }
+    };
+    
+    buscarUsuario();
+  }, []);
+
   console.log("Estado atual do enderecoSelecionado:", enderecoSelecionado);
 
   return (
@@ -943,7 +1021,7 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                   <div className="popup-header">
                     <button className="btn-fechar" onClick={() => setMenuUsuarioAberto(false)}>X</button>
                   </div>
-                  <h3 className="popup-saudacao">Olá Usuario do POP!</h3>
+                  <h3 className="popup-saudacao">Olá {usuario?.nome?.split(' ')[0] || 'Usuário'} do POP!</h3>
                   <hr className="popup-linha" />
                   <div className="popup-opcoes">
                     <button className="btn-opcao" onClick={() => { setTelaAtual('pedidos'); setMenuUsuarioAberto(false); }}>
@@ -1442,149 +1520,176 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
             )}
 
 {/*===============================PEDIDOS======================================================*/} 
-            {telaAtual === 'pedidos' && (
-                <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
-                                  <button 
+      {telaAtual === 'pedidos' && (
+          <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+              <button 
                   onClick={() => setTelaAtual('dashboard')}
                   style={{ 
-                    marginBottom: '20px', padding: '8px 15px', borderRadius: '20px', 
-                    border: '1px solid #ccc', background: 'white', cursor: 'pointer',
-                    fontWeight: 'bold', color: '#666' 
-                  }}> ← Voltar para o início</button>
-                    <h2 style={{ color: '#ff3b3b', marginBottom: '20px', fontSize: '1.8rem' }}>Meus Pedidos</h2>
-                    
-                    {/* Container Principal (Fundo rosinha claro) */}
-                    <div style={{ backgroundColor: '#fff5f6', borderRadius: '15px', padding: '40px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                        
-                        {/* ========================================== */}
-                        {/* 1. SESSÃO DO PEDIDO ATUAL                  */}
-                        {/* ========================================== */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <h3 style={{ color: '#a82424', margin: 0, fontSize: '1.4rem' }}>Pedido atual</h3>
-                            <img src={imgFormigaComendo} alt="Formiga comendo" style={{ width: '90px', marginTop: '-30px' }} />
-                        </div>
+                      marginBottom: '20px', padding: '8px 15px', borderRadius: '20px', 
+                      border: '1px solid #ccc', background: 'white', cursor: 'pointer',
+                      fontWeight: 'bold', color: '#666' 
+                  }}
+              >
+                  ← Voltar para o início
+              </button>
+              <h2 style={{ color: '#ff3b3b', marginBottom: '20px', fontSize: '1.8rem' }}>Meus Pedidos</h2>
+              
+              {/* Container Principal (Fundo rosinha claro) */}
+              <div style={{ backgroundColor: '#fff5f6', borderRadius: '15px', padding: '40px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                  
+                  {/* ========================================== */}
+                  {/* 1. SESSÃO DO PEDIDO ATUAL                  */}
+                  {/* ========================================== */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <h3 style={{ color: '#a82424', margin: 0, fontSize: '1.4rem' }}>Pedido atual</h3>
+                      <img src={imgFormigaComendo} alt="Formiga comendo" style={{ width: '90px', marginTop: '-30px' }} />
+                  </div>
 
-                        {pedidoAtual ? (
-                            <div style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginTop: '10px' }}>
-                                <div style={{ display: 'flex', gap: '25px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
-                                        <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                                            <img 
-                                                src={pedidoAtual.itens[0]?.imagem || imgPlaceholder} 
-                                                alt="Foto do pedido" 
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                            />
-                                        </div>
-                                        <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
-                                            R$ {calcularTotalComTaxa(pedidoAtual).toFixed(2).replace('.', ',')}
-                                        </span>
-                                    </div>
+                  {pedidoAtual ? (
+                      <div style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginTop: '10px' }}>
+                          <div style={{ display: 'flex', gap: '25px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
+                                  <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                                      <img 
+                                          src={pedidoAtual.itens[0]?.imagem || imgPlaceholder} 
+                                          alt="Foto do pedido" 
+                                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                      />
+                                  </div>
+                                  <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
+                                      R$ {calcularTotalComTaxa(pedidoAtual).toFixed(2).replace('.', ',')}
+                                  </span>
+                              </div>
 
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
-                                                {pedidoAtual?.restaurante_nome || "Tortarugas"}
-                                            </span>
-                                        </div>
-                                        
-                                        {pedidoAtual.itens?.map((item, index) => (
-                                            <div key={index} style={{ marginBottom: '10px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome_doce}</span>
-                                                    <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                      <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
+                                          {pedidoAtual?.restaurante_nome || "Tortarugas"}
+                                      </span>
+                                  </div>
+                                  
+                                  {pedidoAtual.itens?.map((item, index) => (
+                                      <div key={index} style={{ marginBottom: '10px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                              <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome_doce}</span>
+                                              <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
 
-                                <hr style={{ border: 'none', borderTop: '2px solid #fff', margin: '20px 0' }} />
+                          <hr style={{ border: 'none', borderTop: '2px solid #fff', margin: '20px 0' }} />
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem' }}>
-                                    <span>Status: <span style={{ color: '#e67e22' }}>{pedidoAtual.status}</span></span>
-                                    <span>Data: {pedidoAtual?.data}</span>
-                                </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem' }}>
+                              <span>Status: <span style={{ color: '#e67e22' }}>{pedidoAtual.status}</span></span>
+                              <span>Data: {pedidoAtual?.data}</span>
+                          </div>
 
-                                <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                                    <button onClick={() => setModalAcompanharAberto(true)} style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-                                        Acompanhar entrega
-                                    </button>
-                                    
-                                    {/* 👇 BOTÃO DE TESTE PARA SIMULAR A ENTREGA */}
-                                    <button 
-                                        onClick={confirmarEntregaFinal}
-                                        style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
-                                    >
-                                        Concluir Pedido
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div style={{ padding: '30px', textAlign: 'center', backgroundColor: '#fbeceb', borderRadius: '15px', marginTop: '10px' }}>
-                                <p style={{ color: '#888', fontWeight: 'bold', fontSize: '1.1rem' }}>Você não tem nenhum pedido em andamento no momento.</p>
-                            </div>
-                        )}
+                          <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+                              {pedidoAtual?.tipo_retirada === 'retirada' ? (
+                                  <>
+                                      <button 
+                                          onClick={() => { 
+                                              setPedidoConfirmadoRetirada({ 
+                                                  pedido_id: pedidoAtual.id, 
+                                                  numero_senha: pedidoAtual.numero_senha 
+                                              }); 
+                                              setModalPainelSenhasAberto(true); 
+                                          }} 
+                                          style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                      >
+                                          Ver Painel de Senhas
+                                      </button>
+                                      <button 
+                                          onClick={confirmarRetirada} 
+                                          style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                      >
+                                          Confirmar Retirada
+                                      </button>
+                                  </>
+                              ) : (
+                                  <>
+                                      <button 
+                                          onClick={() => setModalAcompanharAberto(true)} 
+                                          style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                      >
+                                          Acompanhar entrega
+                                      </button>
+                                      <button 
+                                          onClick={confirmarEntregaFinal} 
+                                          style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                      >
+                                          Concluir Pedido
+                                      </button>
+                                  </>
+                              )}
+                          </div>
+                      </div>
+                  ) : (
+                      <div style={{ padding: '30px', textAlign: 'center', backgroundColor: '#fbeceb', borderRadius: '15px', marginTop: '10px' }}>
+                          <p style={{ color: '#888', fontWeight: 'bold', fontSize: '1.1rem' }}>Você não tem nenhum pedido em andamento no momento.</p>
+                      </div>
+                  )}
 
-                        {/* ========================================== */}
-                        {/* 2. SESSÃO DE PEDIDOS ANTERIORES            */}
-                        {/* ========================================== */}
-                        <div style={{ marginTop: '40px' }}>
-                            <h3 style={{ color: '#a82424', margin: '0 0 20px 0', fontSize: '1.4rem' }}>Pedidos anteriores</h3>
+                  {/* ========================================== */}
+                  {/* 2. SESSÃO DE PEDIDOS ANTERIORES            */}
+                  {/* ========================================== */}
+                  <div style={{ marginTop: '40px' }}>
+                      <h3 style={{ color: '#a82424', margin: '0 0 20px 0', fontSize: '1.4rem' }}>Pedidos anteriores</h3>
 
-                            {pedidosAnteriores.length > 0 ? (
-                                pedidosAnteriores.map((pedidoAntigo, index) => (
-                                    <div key={index} style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginBottom: '15px' }}>
-                                        <div style={{ display: 'flex', gap: '25px' }}>
-                                            
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
-                                                <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                                                    <img 
-                                                      src={pedidoAntigo.itens[0]?.imagem || imgPlaceholder}
-                                                      alt="Pedido"
-                                                      style={{
-                                                          width: '100%',
-                                                          height: '100%',
-                                                          objectFit: 'cover',
-                                                          borderRadius: '10px'
-                                                      }}
-                                                  />
-                                                </div>
-                                                <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
-                                                    R$ {calcularTotalComTaxa(pedidoAntigo).toFixed(2).replace('.', ',')}
-                                                </span>
-                                            </div>
+                      {pedidosAnteriores.length > 0 ? (
+                          pedidosAnteriores.map((pedidoAntigo, index) => (
+                              <div key={index} style={{ backgroundColor: '#fbeceb', padding: '25px', borderRadius: '15px', marginBottom: '15px' }}>
+                                  <div style={{ display: 'flex', gap: '25px' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
+                                          <div style={{ width: '120px', height: '120px', backgroundColor: '#bdc3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                                              <img 
+                                                  src={pedidoAntigo.itens[0]?.imagem || imgPlaceholder}
+                                                  alt="Pedido"
+                                                  style={{
+                                                      width: '100%',
+                                                      height: '100%',
+                                                      objectFit: 'cover',
+                                                      borderRadius: '10px'
+                                                  }}
+                                              />
+                                          </div>
+                                          <span style={{ marginTop: '10px', fontWeight: 'bold', color: '#333' }}>
+                                              R$ {calcularTotalComTaxa(pedidoAntigo).toFixed(2).replace('.', ',')}
+                                          </span>
+                                      </div>
 
-                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
-                                                    {pedidoAntigo.restaurante_nome}
-                                                </span>
-                                                
-                                                {pedidoAntigo.itens.map((item, idx) => (
-                                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome_doce}</span>
-                                                        <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
-                                                    </div>
-                                                ))}
+                                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                          <span style={{ fontWeight: 'bold', color: '#a82424', fontSize: '1.1rem' }}>
+                                              {pedidoAntigo.restaurante_nome}
+                                          </span>
+                                          
+                                          {pedidoAntigo.itens.map((item, idx) => (
+                                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                  <span style={{ fontWeight: 'bold', color: '#a82424' }}>{item.nome_doce}</span>
+                                                  <span style={{ fontWeight: 'bold', color: '#555', fontSize: '0.9rem' }}>Qtd: {item.quantidade}</span>
+                                              </div>
+                                          ))}
 
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem', marginTop: 'auto' }}>
-                                                    <span>Status: <span style={{ color: '#27ae60' }}>{pedidoAntigo.status}</span></span>
-                                                    <span>Data: {pedidoAntigo.data}</span>
-                                                </div>
-                                            </div>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000', fontSize: '0.95rem', marginTop: 'auto' }}>
+                                              <span>Status: <span style={{ color: '#27ae60' }}>{pedidoAntigo.status}</span></span>
+                                              <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#302e2e' }}>Data: {pedidoAntigo.data}</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          ))
+                      ) : (
+                          <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontWeight: 'bold' }}>
+                              Nenhum pedido anterior encontrado.
+                          </div>
+                      )}
+                  </div>
 
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontWeight: 'bold' }}>
-                                    Nenhum pedido anterior encontrado.
-                                </div>
-                            )}
-                        </div>
-
-                    </div>
-                </div>
-            )}
+              </div>
+          </div>
+      )}
 
 {/*=====================================PERFIL RESTAURANTES========================================*/}
             {/* --- NOVA TELA: DETALHES DO RESTAURANTE --- */}
@@ -2322,7 +2427,8 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
     <ModalAcompanharEntrega 
       isOpen={modalAcompanharAberto}
       onClose={() => setModalAcompanharAberto(false)}
-      pedidoAtivoId={pedidoAtual?.id} // Passa o ID do pedido atual
+      pedidoAtivoId={pedidoAtual?.id}
+      infoEntregador={infoEntregador}
     />
 
     <ModalConfirmacaoRetirada 
