@@ -41,6 +41,7 @@ function App() {
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [carrinhoVazio, setCarrinhoVazio] = useState(true); // Começa como true (vazio)
+  const [usuarioNome, setUsuarioNome] = useState('');
 
   // Novo estado para guardar qual loja o usuário clicou
   const [lojaSelecionada, setLojaSelecionada] = useState(null);
@@ -297,81 +298,91 @@ function App() {
           alert("Erro ao solicitar login");}
     };
 
-    const verificarLogin = async () => {
-      const tokenFinal = codigoLogin.join('').trim();
+  const verificarLogin = async () => {
+    const tokenFinal = codigoLogin.join('').trim();
 
-      console.log("Token login:", tokenFinal);
+    console.log("Token login:", tokenFinal);
 
-      if (tokenFinal.length < 6) {
-        alert("Digite os 6 números");
+    if (tokenFinal.length < 6) {
+      alert("Digite os 6 números");
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/usuarios/login/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailLogin,
+          token: tokenFinal
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message);
         return;
       }
 
-      try {
-        const response = await fetch('http://localhost:5000/usuarios/login/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: emailLogin,
-            token: tokenFinal
-          })
-        });
+      // ✅ Salva TUDO no localStorage
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('usuario_id', data.usuario.id);
+      localStorage.setItem('usuario_nome', data.usuario.nome);     // 👈 ADICIONADO
+      localStorage.setItem('usuario_email', data.usuario.email);   // 👈 ADICIONADO
+      
+      // ✅ Atualiza o estado
+      setUsuarioNome(data.usuario.nome);
 
-        const data = await response.json();
+      setTelaAtual('dashboard');
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao verificar login");
+    }
+  };
 
-        if (!response.ok) {
-          alert(data.message);
-          return;
-        }
-
-        const accessToken = data.access_token;
-
-        localStorage.setItem('token', accessToken);
-
-        if (data.usuario && data.usuario.id) {
-            localStorage.setItem('usuario_id', data.usuario.id);
-        } else if (data.id) {
-            localStorage.setItem('usuario_id', data.id);
-        }
-
-        setTelaAtual('dashboard');
-
-
-      } catch (error) {
-        console.error(error);
-        alert("Erro ao verificar login");
+  useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const idUrl = params.get('id');
+      if (idUrl) {
+          localStorage.setItem('usuario_id', idUrl);
       }
-    };
+  }, []);
 
     useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const idUrl = params.get('id');
-    if (idUrl) {
-        localStorage.setItem('usuario_id', idUrl);
+      const nomeSalvo = localStorage.getItem('usuario_nome');
+      if (nomeSalvo) {
+        setUsuarioNome(nomeSalvo);
     }
 }, []);
   {/* ================================================================ */}
   // login/cadasto com o google e facebook
 
-    useEffect(() => {
-      // Captura parâmetros da URL (para login social)
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
-      const usuarioId = params.get('usuario_id');
-      const email = params.get('email');
+  useEffect(() => {
+    // Captura parâmetros da URL (para login social)
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const usuarioId = params.get('usuario_id');
+    const email = params.get('email');
+    const nome = params.get('nome');  // 👈 ADICIONE: captura o nome da URL
 
-      if (token && usuarioId) {
-        // Salva no localStorage
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('usuario_id', usuarioId);
-        if (email) localStorage.setItem('usuario_email', email);
-        
-        // Limpa a URL (opcional)
-        window.history.replaceState({}, document.title, '/dashboard');
-      }
-    }, []);
+    if (token && usuarioId) {
+      // Salva no localStorage
+      localStorage.setItem('access_token', token);
+      localStorage.setItem('usuario_id', usuarioId);
+      if (email) localStorage.setItem('usuario_email', email);
+      if (nome) localStorage.setItem('usuario_nome', nome);  // 👈 ADICIONE
+      
+      // ✅ Atualiza o estado com o nome
+      if (nome) setUsuarioNome(nome);
+      
+      // Limpa a URL (opcional)
+      window.history.replaceState({}, document.title, '/dashboard');
+      setTelaAtual('dashboard');
+    }
+  }, []);
 
-    const completarCadastroSocial = async () => {
+  const completarCadastroSocial = async () => {
     try {
       console.log("📤 Enviando cadastro complementar:", {
         provider: provider,
@@ -388,7 +399,7 @@ function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          provider: provider, // 👈 AGORA É DINÂMICO (google OU facebook)
+          provider: provider,
           provider_user_id: providerId,
           nome,
           telefone,
@@ -406,21 +417,30 @@ function App() {
 
       alert("Cadastro finalizado com sucesso!");
 
-      // Salva o ID do usuário se vier na resposta
+      // ✅ Salva o ID e nome do usuário
       if (data.usuario_id) {
         localStorage.setItem('usuario_id', data.usuario_id);
       }
       if (data.access_token) {
         localStorage.setItem('access_token', data.access_token);
       }
+      
+      // ✅ Salva o nome (se vier na resposta OU usa o estado local)
+      if (data.nome) {
+        localStorage.setItem('usuario_nome', data.nome);
+        setUsuarioNome(data.nome);
+      } else if (nome) {
+        // Se o backend não retornar, usa o nome do estado local
+        localStorage.setItem('usuario_nome', nome);
+        setUsuarioNome(nome);
+      }
 
       setTelaAtual("dashboard");
-
     } catch (error) {
       console.error(error);
       alert("Erro ao completar cadastro");
     }
-};
+  };
 
     {/* ================================================== */}
     // Integração Front e Back de Cadatsro de restaurantes:
@@ -1205,6 +1225,9 @@ function App() {
         quantidadeProduto={quantidadeProduto} 
         setQuantidadeProduto={setQuantidadeProduto}
 
+        usuarioNome={usuarioNome}
+        setUsuarioNome={setUsuarioNome}
+
         />
       )}
        
@@ -1802,3 +1825,5 @@ function App() {
 }
 
 export default App;
+
+

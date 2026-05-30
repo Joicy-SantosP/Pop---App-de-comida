@@ -7,7 +7,6 @@ class Entrega(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=False)
     
-    # 🔄 ALTERADO: Agora é ForeignKey para a tabela entregadores
     entregador_id = db.Column(db.Integer, db.ForeignKey('entregadores.id'), nullable=True)
     
     endereco_snapshot = db.Column(db.String(256), nullable=False)
@@ -18,7 +17,6 @@ class Entrega(db.Model):
     data_saida = db.Column(db.DateTime, default=datetime.utcnow)
     data_conclusao = db.Column(db.DateTime)
 
-    # Relacionamentos
     pedido = db.relationship('Pedido', backref=db.backref('detalhes_entrega', uselist=False))
     entregador = db.relationship('Entregador', backref=db.backref('entregas', lazy=True))
 

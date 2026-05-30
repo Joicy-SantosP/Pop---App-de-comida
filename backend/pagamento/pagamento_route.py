@@ -528,7 +528,7 @@ def checkout_retirada():
         },
         "statement_descriptor": "POP DOCES",
         "back_urls": {
-            "success": "hhttps://ceremony-moving-strainer.ngrok-free.dev/pagamentos/retorno-sucesso",
+            "success": "https://ceremony-moving-strainer.ngrok-free.dev/pagamentos/retorno-sucesso",
             "failure": "https://seusite.com/erro",
             "pending": "https://seusite.com/pendente"
         },

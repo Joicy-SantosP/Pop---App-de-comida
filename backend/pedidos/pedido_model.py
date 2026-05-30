@@ -88,12 +88,12 @@ class Pedido(db.Model):
             "restaurante_id": self.restaurante_id,
             "status": self.status,
             "total": self.total,
-            "tipo_retirada": self.tipo_retirada,  # 🔄 NOVO
-            "status_preparo": self.status_preparo,  # 🔄 NOVO
-            "numero_senha": self.numero_senha,  # 🔄 NOVO
-            "codigo_confirmacao": self.codigo_confirmacao,  # 🔄 NOVO
+            "tipo_retirada": self.tipo_retirada,  
+            "status_preparo": self.status_preparo,  
+            "numero_senha": self.numero_senha,  
+            "codigo_confirmacao": self.codigo_confirmacao,  
             "restaurante_nome": self.restaurante.nome,
-            "data": self.data_preparo_inicio.strftime('%d/%m/%Y %H:%M') if self.data_preparo_inicio else None,  # 🔄 NOVO
+            "data": self.data_preparo_inicio.strftime('%d/%m/%Y %H:%M') if self.data_preparo_inicio else None,  
             
             "itens": [
                 {

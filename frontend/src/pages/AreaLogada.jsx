@@ -50,7 +50,7 @@ function AreaLogada({
   lojaSelecionada, setLojaSelecionada, lojas,
   produtoSelecionado, setProdutoSelecionado, quantidadeProduto, 
   setQuantidadeProduto,passoEndereco,tipoFavorito,
-  setTipoFavorito,
+  setTipoFavorito, usuarioNome, setUsuarioNome
 }) {
 
     
@@ -97,6 +97,7 @@ function AreaLogada({
   const [modalPainelSenhasAberto, setModalPainelSenhasAberto] = useState(false);
   const [infoEntregador, setInfoEntregador] = useState(null);
   const [usuario, setUsuario] = useState(null);
+  const nomeExibido = usuarioNome?.split(' ')[0] || 'Usuário';
 
   /* ==================================================
    PREÇOS
@@ -1021,7 +1022,7 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                   <div className="popup-header">
                     <button className="btn-fechar" onClick={() => setMenuUsuarioAberto(false)}>X</button>
                   </div>
-                  <h3 className="popup-saudacao">Olá {usuario?.nome?.split(' ')[0] || 'Usuário'} do POP!</h3>
+                  <h3 className="popup-saudacao"> Olá, {nomeExibido}!</h3>
                   <hr className="popup-linha" />
                   <div className="popup-opcoes">
                     <button className="btn-opcao" onClick={() => { setTelaAtual('pedidos'); setMenuUsuarioAberto(false); }}>
@@ -1585,47 +1586,48 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                               <span>Status: <span style={{ color: '#e67e22' }}>{pedidoAtual.status}</span></span>
                               <span>Data: {pedidoAtual?.data}</span>
                           </div>
+                          
 
                           <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                              {pedidoAtual?.tipo_retirada === 'retirada' ? (
+                                {pedidoAtual?.tipo_retirada === 'retirada' ? (
                                   <>
-                                      <button 
-                                          onClick={() => { 
-                                              setPedidoConfirmadoRetirada({ 
-                                                  pedido_id: pedidoAtual.id, 
-                                                  numero_senha: pedidoAtual.numero_senha 
-                                              }); 
-                                              setModalPainelSenhasAberto(true); 
-                                          }} 
-                                          style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
-                                      >
-                                          Ver Painel de Senhas
-                                      </button>
-                                      <button 
-                                          onClick={confirmarRetirada} 
-                                          style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
-                                      >
-                                          Confirmar Retirada
-                                      </button>
+                                    <button 
+                                      onClick={() => { 
+                                        setPedidoConfirmadoRetirada({ 
+                                          pedido_id: pedidoAtual.id, 
+                                          numero_senha: pedidoAtual.numero_senha 
+                                        }); 
+                                        setModalPainelSenhasAberto(true); 
+                                      }} 
+                                      style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                    >
+                                      Ver Painel de Senhas
+                                    </button>
+                                    <button 
+                                      onClick={confirmarRetirada} 
+                                      style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                    >
+                                      Confirmar Retirada
+                                    </button>
                                   </>
-                              ) : (
+                                ) : (
                                   <>
-                                      <button 
-                                          onClick={() => setModalAcompanharAberto(true)} 
-                                          style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
-                                      >
-                                          Acompanhar entrega
-                                      </button>
-                                      <button 
-                                          onClick={confirmarEntregaFinal} 
-                                          style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
-                                      >
-                                          Concluir Pedido
-                                      </button>
+                                    <button 
+                                      onClick={() => setModalAcompanharAberto(true)} 
+                                      style={{ flex: 1, backgroundColor: '#ff3b3b', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                    >
+                                      Acompanhar entrega
+                                    </button>
+                                    <button 
+                                      onClick={confirmarEntregaFinal} 
+                                      style={{ flex: 1, backgroundColor: '#27ae60', color: '#fff', border: 'none', padding: '12px', borderRadius: '30px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                                    >
+                                      Concluir Pedido
+                                    </button>
                                   </>
-                              )}
-                          </div>
-                      </div>
+                                )}
+                              </div>
+                      </div> //fecha a div do acompanhar painel e entrega
                   ) : (
                       <div style={{ padding: '30px', textAlign: 'center', backgroundColor: '#fbeceb', borderRadius: '15px', marginTop: '10px' }}>
                           <p style={{ color: '#888', fontWeight: 'bold', fontSize: '1.1rem' }}>Você não tem nenhum pedido em andamento no momento.</p>
@@ -2457,6 +2459,7 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
         pedidoId={pedidoConfirmadoRetirada?.pedido_id}
         numeroSenha={pedidoConfirmadoRetirada?.numero_senha}
       />
+
 
     <ToastContainer />
           </>

@@ -83,13 +83,26 @@ def migrar():
         print("\n👤 Migrando tabela 'entregadores'...")
         adicionar_coluna_sqlite('entregadores', 'disponivel', "BOOLEAN", "1")  # SQLite usa 0/1 para boolean
         
+        # ✅ NOVAS COLUNAS PARA LOGIN DE ENTREGADORES
+        print("\n🔐 Adicionando colunas de login para entregadores...")
+        adicionar_coluna_sqlite('entregadores', 'login_token', "VARCHAR(6)")
+        adicionar_coluna_sqlite('entregadores', 'login_token_expiration', "DATETIME")
+        
+        # 4. Verificar se a tabela 'usuarios' também precisa dessas colunas
+        print("\n👥 Verificando tabela 'usuarios'...")
+        if verificar_coluna_sqlite('usuarios', 'id'):  # Verifica se a tabela existe
+            adicionar_coluna_sqlite('usuarios', 'login_token', "VARCHAR(6)")
+            adicionar_coluna_sqlite('usuarios', 'login_token_expiration', "DATETIME")
+        else:
+            print("ℹ️  Tabela 'usuarios' não encontrada (pode ser normal)")
+        
         print("\n" + "=" * 60)
         print("🎉 MIGRAÇÃO CONCLUÍDA COM SUCESSO!")
         print("=" * 60)
         
-        # 4. Mostrar resumo das tabelas
+        # 5. Mostrar resumo das tabelas
         print("\n📊 RESUMO DAS TABELAS:")
-        tabelas = ['pedidos', 'entregas', 'entregadores']
+        tabelas = ['pedidos', 'entregas', 'entregadores', 'usuarios']
         for tabela in tabelas:
             try:
                 colunas = db.session.execute(text(f"PRAGMA table_info({tabela})")).fetchall()
@@ -103,9 +116,9 @@ def migrar():
                         print(" [PK]", end="")
                     print()
             except Exception as e:
-                print(f"\n❌ Erro ao ler tabela '{tabela}': {e}")
+                print(f"\n⚠️  Tabela '{tabela}' não encontrada ou erro: {e}")
         
-        # 5. Verificar dados existentes
+        # 6. Verificar dados existentes
         print("\n📊 DADOS EXISTENTES:")
         try:
             from pedidos.pedido_model import Pedido

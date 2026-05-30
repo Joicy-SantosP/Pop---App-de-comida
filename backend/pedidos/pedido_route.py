@@ -101,6 +101,8 @@ def forcar_pronto(id):
 @pedidos_blueprint.route("/usuarios/<int:user_id>/pedidos", methods=["GET"])
 def listar_pedidos_usuario(user_id):
     pedidos = Pedido.query.filter_by(usuario_id=user_id).order_by(Pedido.id.desc()).all()
+    for p in pedidos:
+        print(f"Pedido #{p.id}: tipo_retirada={p.tipo_retirada}, status={p.status}")
     return jsonify([p.to_dict() for p in pedidos]), 200
 
 @pedidos_blueprint.route('/pedidos/<int:id>/confirmar-retirada', methods=['PATCH'])
