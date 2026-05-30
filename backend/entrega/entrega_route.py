@@ -52,6 +52,7 @@ def despachar_pedido(pedido_id):
             taxa_entrega=data.get('taxa', 0.0)
         )
         
+        # Status padronizados
         pedido.status = "Em Trânsito"
         entregador.status = "Em entrega"
         

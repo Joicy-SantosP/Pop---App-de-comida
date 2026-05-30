@@ -82,6 +82,8 @@ def migrar():
         # 3. Migrações da tabela 'entregadores'
         print("\n👤 Migrando tabela 'entregadores'...")
         adicionar_coluna_sqlite('entregadores', 'disponivel', "BOOLEAN", "1")  # SQLite usa 0/1 para boolean
+        adicionar_coluna_sqlite('entregadores', 'login_token', "VARCHAR(6)")
+        adicionar_coluna_sqlite('entregadores', 'login_token_expiration', "DATETIME")
         
         # ✅ NOVAS COLUNAS PARA LOGIN DE ENTREGADORES
         print("\n🔐 Adicionando colunas de login para entregadores...")
