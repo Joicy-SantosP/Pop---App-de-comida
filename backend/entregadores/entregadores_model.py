@@ -15,6 +15,9 @@ class Entregador(db.Model):
     email_token = db.Column(db.String(6), nullable=True)
     email_token_expiration = db.Column(db.DateTime, nullable=True)
     email_verified = db.Column(db.Boolean, default=False)
+
+    login_token = db.Column(db.String(6), nullable=True)
+    login_token_expiration = db.Column(db.DateTime, nullable=True)
     
     # 🔄 NOVO: Campo para controle de disponibilidade
     disponivel = db.Column(db.Boolean, default=True)

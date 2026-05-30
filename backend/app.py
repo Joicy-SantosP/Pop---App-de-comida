@@ -11,6 +11,7 @@ from usuarios.auth.social_auth_route import social_auth_bp
 from pagamento.pagamento_route import pagamentos_bp
 from entrega.entrega_route import entrega_bp
 from entregadores.entregadores_route import entregador_bp
+from relatorio.relatorio_route import relatorio_bp
 
 from restaurantes.restaurante_model import Restaurantes
 from pedidos.pedido_model import ItemPedido
@@ -29,6 +30,7 @@ app.register_blueprint(pedidos_blueprint)
 app.register_blueprint(pagamentos_bp)
 app.register_blueprint(entrega_bp)
 app.register_blueprint(entregador_bp)
+app.register_blueprint(relatorio_bp)
 
 def enviar_confirmacao_com_pdf(pedido, email_cliente):
     msg = Message(

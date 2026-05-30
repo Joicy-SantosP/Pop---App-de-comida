@@ -4,7 +4,7 @@ from datetime import datetime
 from pedidos.pedido_model import Pedido
 from entrega.entrega_model import Entrega
 from endereco.endereco_model import Endereco
-from entregadores.entregadores_model import Entregador  # NOVO IMPORT
+from entregadores.entregadores_model import Entregador
 
 entrega_bp = Blueprint('entrega', __name__)
 
@@ -24,7 +24,7 @@ def despachar_pedido(pedido_id):
     if pedido.status not in ["Pronto", "Em Preparação"]:
         return jsonify({"erro": "Pedido não está pronto para despacho"}), 400
 
-    # 🔄 NOVO: Buscar entregador disponível ou usar o informado
+    # Buscar entregador disponível ou usar o informado
     entregador = None
     entregador_id = data.get('entregador_id')
     
@@ -47,16 +47,15 @@ def despachar_pedido(pedido_id):
 
         nova_entrega = Entrega(
             pedido_id=pedido.id,
-            entregador_id=entregador.id,  # 🔄 ALTERADO: Usa ID do entregador
+            entregador_id=entregador.id,
             endereco_snapshot=endereco_completo,
             latitude_entrega=endereco_ref.latitude,
             longitude_entrega=endereco_ref.longitude,
             taxa_entrega=data.get('taxa', 0.0)
         )
         
+        # Status padronizados
         pedido.status = "Em Trânsito"
-        
-        # 🔄 NOVO: Atualiza status do entregador
         entregador.status = "Em entrega"
         
         db.session.add(nova_entrega)
@@ -87,13 +86,13 @@ def confirmar_entrega(pedido_id):
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-    # 🔄 CORRIGIDO: Aceita mais status para confirmação
-    status_permitidos = ["Em transito", "Próximo", "Em Preparação", "Pronto"]
+    # Status padronizados
+    status_permitidos = ["Em Trânsito", "Próximo", "Em Preparação", "Pronto"]
     
     if pedido.status not in status_permitidos:
         return jsonify({"erro": f"O pedido não está em rota de entrega. Status atual: {pedido.status}"}), 400
 
-    # 🔄 CORRIGIDO: Verifica se o pedido tem código de confirmação
+    # Verifica se o pedido tem código de confirmação
     if not pedido.codigo_confirmacao:
         # Se não tiver código, gera um para teste
         pedido.gerar_codigo_entrega()
@@ -104,14 +103,14 @@ def confirmar_entrega(pedido_id):
         }), 400
 
     if codigo_informado != pedido.codigo_confirmacao:
-        return jsonify({"erro": f"Código de entrega incorreto! Código esperado: {pedido.codigo_confirmacao}"}), 403
+        return jsonify({"erro": "Código de entrega incorreto!"}), 403
 
     try:
         pedido.status = "Entregue"
         if pedido.detalhes_entrega:
             pedido.detalhes_entrega.data_conclusao = datetime.utcnow()
             
-            # Libera o entregador
+            # Libera o entregador - status padronizado
             if pedido.detalhes_entrega.entregador:
                 pedido.detalhes_entrega.entregador.status = "Disponível"
             
@@ -122,7 +121,7 @@ def confirmar_entrega(pedido_id):
         return jsonify({"erro": str(e)}), 500
 
 
-# 🔄 NOVA ROTA: Listar entregas de um entregador específico (para o app mobile)
+# Listar entregas de um entregador específico (para o app mobile)
 @entrega_bp.route('/entregador/<int:entregador_id>/entregas', methods=['GET'])
 def listar_entregas_entregador(entregador_id):
     """Retorna todas as entregas de um entregador específico"""
@@ -148,7 +147,7 @@ def listar_entregas_entregador(entregador_id):
     }), 200
 
 
-# 🔄 NOVA ROTA: Atualizar localização do entregador (para rastreamento)
+# Atualizar localização do entregador (para rastreamento)
 @entrega_bp.route('/entregador/<int:entregador_id>/localizacao', methods=['PUT'])
 def atualizar_localizacao(entregador_id):
     """Atualiza a localização atual do entregador"""
@@ -177,7 +176,7 @@ def simular_entrega(pedido_id):
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-    # 🔄 CORREÇÃO: Sequências diferentes para retirada e entrega
+
     if pedido.tipo_entrega == "retirada":
         sequencia = ["Em Preparação", "Pronto", "Entregue"]
         mensagens = {
@@ -218,7 +217,6 @@ def simular_entrega(pedido_id):
     novo_indice = indice_atual + 1
     pedido.status = sequencia[novo_indice]
     
-    # Se chegou em "Em Trânsito" e é entrega, cria detalhes de entrega
     if pedido.status == "Em Trânsito" and pedido.tipo_entrega == "entrega" and not pedido.detalhes_entrega:
         endereco = Endereco.query.filter_by(usuario_id=pedido.usuario_id).first()
         if endereco:
@@ -238,7 +236,6 @@ def simular_entrega(pedido_id):
             if entregador:
                 entregador.status = "Em entrega"
     
-    # Se chegou em "Entregue", finaliza
     if pedido.status == "Entregue":
         if pedido.tipo_entrega == "entrega" and pedido.detalhes_entrega:
             pedido.detalhes_entrega.data_conclusao = datetime.utcnow()
