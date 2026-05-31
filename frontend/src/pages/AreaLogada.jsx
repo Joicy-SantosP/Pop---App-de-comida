@@ -4,6 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Relatorio from "./Relatorio";
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -1032,6 +1033,10 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                     <button className="btn-opcao" onClick={() => { setTelaAtual('cadastro'); setMenuUsuarioAberto(false); }}>
                       <span className="icone">📝</span> Cadastrar
                     </button>
+                  {/* Esse botão agora altera o estado do App.jsx perfeitamente */}
+                  <button className="btn-opcao" onClick={() => { setTelaAtual('relatorio'); setMenuUsuarioAberto(false); }}>
+                    <span className="icone">📊</span> Relatório
+                  </button>
                     <button className="btn-opcao"><span className="icone">❓</span> Ajuda</button>
                     <button className="btn-opcao" onClick={() => { setTelaAtual('home'); setMenuUsuarioAberto(false); }}>
                       <span className="icone">⬅️</span> Sair
@@ -1811,7 +1816,9 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
 
               </div>
             )}
-            
+            {telaAtual === 'relatorio' && (
+          <Relatorio setTelaAtual={setTelaAtual} />
+        )}
           </main>
         </div>
       )}
