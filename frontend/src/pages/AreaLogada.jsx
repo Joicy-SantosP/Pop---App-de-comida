@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import Relatorio from "./Relatorio";
+
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -41,6 +41,8 @@ import ModalPix from '../pages/ModalPix';
 import ModalAcompanharEntrega from '../pages/ModalAcompanharEntrega';
 import ModalConfirmacaoRetirada from '../pages/ModalConfirmacaoRetirada';
 import ModalPainelSenhas from '../pages/ModalPainelSenhas';
+import Relatorio from "../pages/Relatorio";
+import PerfilUsuario from '../pages/PerfilUsuario';
 
 function AreaLogada({ 
   telaAtual, setTelaAtual, 
@@ -98,7 +100,28 @@ function AreaLogada({
   const [modalPainelSenhasAberto, setModalPainelSenhasAberto] = useState(false);
   const [infoEntregador, setInfoEntregador] = useState(null);
   const [usuario, setUsuario] = useState(null);
-  const nomeExibido = usuarioNome?.split(' ')[0] || 'Usuário';
+  const nomeExibido = (() => {
+    // 1. Estado do componente (prioridade máxima)
+    if (usuarioNome) return usuarioNome.split(' ')[0];
+    
+    // 2. localStorage (atualizado pelo modal)
+    const nomeSalvo = localStorage.getItem('usuario_nome');
+    if (nomeSalvo) return nomeSalvo.split(' ')[0];
+    
+    // 3. Objeto usuario no localStorage
+    const usuarioStorage = localStorage.getItem('usuario');
+    if (usuarioStorage) {
+      try {
+        const usuario = JSON.parse(usuarioStorage);
+        if (usuario.nome) return usuario.nome.split(' ')[0];
+      } catch (e) {}
+    }
+    
+    // 4. Fallback
+    return 'Usuário';
+  })();
+  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
+  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
 
   /* ==================================================
    PREÇOS
@@ -931,25 +954,62 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
   }, []);
 
   useEffect(() => {
-    const buscarUsuario = async () => {
-      const userId = localStorage.getItem('userId');
-      if (!userId) return;
-      
-      try {
-        const response = await fetch(`http://localhost:5000/usuarios/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUsuario(data);
-          // Opcional: salvar no localStorage para não buscar sempre
-          localStorage.setItem('usuario', JSON.stringify(data));
+      const buscarUsuario = async () => {
+        const usuarioId = localStorage.getItem('usuario_id') || 
+                        localStorage.getItem('userId');
+        
+        if (!usuarioId) return;
+        
+        try {
+          const token = localStorage.getItem('access_token');
+          const response = await fetch(`http://localhost:5000/usuarios/${usuarioId}`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setUsuario(data);
+            
+            // 🔄 Atualiza o nome no estado e localStorage
+            if (data.nome) {
+              setUsuarioNome(data.nome); // Atualiza o estado do componente pai
+              localStorage.setItem('usuario_nome', data.nome); // Salva no localStorage
+              localStorage.setItem('usuario', JSON.stringify(data)); // Salva tudo
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao buscar usuário:', error);
         }
-      } catch (error) {
-        console.error('Erro ao buscar usuário:', error);
-      }
-    };
-    
-    buscarUsuario();
+      };
+      
+      buscarUsuario();
   }, []);
+
+    useEffect(() => {
+      const handleUsuarioAtualizado = (evento) => {
+        const dadosAtualizados = evento.detail;
+        
+        // Atualiza o nome do usuário
+        if (dadosAtualizados.nome && setUsuarioNome) {
+          setUsuarioNome(dadosAtualizados.nome);
+          console.log('✅ Nome atualizado via evento:', dadosAtualizados.nome);
+        }
+        
+        // Atualiza o estado local do usuário
+        setUsuario(prev => ({
+          ...prev,
+          ...dadosAtualizados
+        }));
+      };
+
+      // Adiciona o listener
+      window.addEventListener('usuario-atualizado', handleUsuarioAtualizado);
+
+      // Limpa o listener quando o componente desmontar
+      return () => {
+        window.removeEventListener('usuario-atualizado', handleUsuarioAtualizado);
+      };
+  }, [setUsuarioNome]);
 
   console.log("Estado atual do enderecoSelecionado:", enderecoSelecionado);
 
@@ -1029,12 +1089,16 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
                     <button className="btn-opcao" onClick={() => { setTelaAtual('pedidos'); setMenuUsuarioAberto(false); }}>
                     <span className="icone">🧾</span> Pedidos
                   </button>
-                    <button className="btn-opcao"><span className="icone">👤</span> Meus dados</button>
+                    <button className="btn-opcao" onClick={() => { 
+                      setModalPerfilAberto(true); 
+                      setMenuUsuarioAberto(false); 
+                    }}>
+                      <span className="icone">👤</span> Meus dados
+                    </button>
                     <button className="btn-opcao" onClick={() => { setTelaAtual('cadastro'); setMenuUsuarioAberto(false); }}>
                       <span className="icone">📝</span> Cadastrar
                     </button>
-                  {/* Esse botão agora altera o estado do App.jsx perfeitamente */}
-                  <button className="btn-opcao" onClick={() => { setTelaAtual('relatorio'); setMenuUsuarioAberto(false); }}>
+                  <button className="btn-opcao" onClick={() => { setModalRelatorioAberto(true); setMenuUsuarioAberto(false); }}>
                     <span className="icone">📊</span> Relatório
                   </button>
                     <button className="btn-opcao"><span className="icone">❓</span> Ajuda</button>
@@ -1816,15 +1880,13 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
 
               </div>
             )}
-            {telaAtual === 'relatorio' && (
-          <Relatorio setTelaAtual={setTelaAtual} />
-        )}
+          
           </main>
         </div>
       )}
 
-
 {/*==============================PRODUTO SELECIONADO============================================================ */}
+
       {/* MODAL DE PRODUTO (POP-UP)*/}
       {produtoSelecionado && (
         <div style={{
@@ -2466,6 +2528,132 @@ const atualizarTaxaEntrega = async (enderecoId, pedidoIdOuRestauranteId) => {
         pedidoId={pedidoConfirmadoRetirada?.pedido_id}
         numeroSenha={pedidoConfirmadoRetirada?.numero_senha}
       />
+
+      {modalRelatorioAberto && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            width: '95%',
+            maxWidth: '1200px',
+            height: '90vh',
+            backgroundColor: '#fdf2f5',
+            borderRadius: '15px',
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            {/* Botão X para fechar */}
+            <button 
+              onClick={() => setModalRelatorioAberto(false)}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '20px',
+                zIndex: 10,
+                backgroundColor: '#ff3b3b',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '35px',
+                height: '35px',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              ✕
+            </button>
+            
+            {/* Conteúdo com scroll */}
+            <div style={{ height: '100%', overflowY: 'auto', padding: '20px' }}>
+              <Relatorio setTelaAtual={setTelaAtual} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalPerfilAberto && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            width: '95%',
+            maxWidth: '700px',
+            maxHeight: '90vh',
+            backgroundColor: '#fdf2f5',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            position: 'relative',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            {/* Botão X para fechar */}
+            <button 
+              onClick={() => setModalPerfilAberto(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                zIndex: 10,
+                backgroundColor: '#ff3b3b',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '35px',
+                height: '35px',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(255, 59, 59, 0.3)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.backgroundColor = '#ff1f1f';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.backgroundColor = '#ff3b3b';
+              }}
+            >
+              ✕
+            </button>
+            
+            {/* Conteúdo com scroll */}
+            <div style={{ 
+              height: '100%', 
+              maxHeight: '90vh', 
+              overflowY: 'auto',
+              padding: '10px'
+            }}>
+              <PerfilUsuario 
+                onClose={() => setModalPerfilAberto(false)}
+                setTelaAtual={setTelaAtual}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
 
     <ToastContainer />
