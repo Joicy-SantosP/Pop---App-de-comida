@@ -5,7 +5,7 @@ from datetime import datetime
 
 pedidos_blueprint = Blueprint('pedidos', __name__)
 
-###cria um pedido vazio (Abre o carrinho)
+# Cria um pedido vazio (abre o carrinho de compras)
 @pedidos_blueprint.route("/pedidos", methods=["POST"])
 def abrir_pedido():
     dados = request.get_json()
@@ -15,20 +15,18 @@ def abrir_pedido():
     if not restaurante_id or not usuario_id:
          return jsonify({"erro": "O ID do restaurante é obrigatório"}), 400
 
-    ###Chama a regra de negócio que está no Model
     pedido, status = criar_carrinho(restaurante_id, usuario_id)
     return jsonify(pedido), status
 
-###adiciona um doce e calcula o faturamento
+# Adiciona um doce ao carrinho e recalcula o total do pedido
 @pedidos_blueprint.route("/pedidos/<int:pedido_id>/itens", methods=["POST"])
 def adicionar_item(pedido_id):
     dados = request.get_json()
     
-    # Passa o trabalho  pro Model fazer a matemática
     pedido_atualizado, status = adicionar_item_ao_carrinho(pedido_id, dados)
     return jsonify(pedido_atualizado), status
 
-# rota cancelar
+# Cancela um pedido existente
 @pedidos_blueprint.route("/pedidos/<int:id>/cancelar", methods=["PUT"])
 def cancelar_pedido(id):
     pedido = db.session.get(Pedido, id)
@@ -46,7 +44,8 @@ def cancelar_pedido(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": "Erro ao cancelar pedido", "detalhes": str(e)}), 500
-    
+
+# Acompanha o status do pedido com transições automáticas baseadas no tempo
 @pedidos_blueprint.route('/pedidos/<int:id>/status', methods=["GET"])
 def acompanhar_pedido(id):
     pedido = db.session.get(Pedido, id)
@@ -59,20 +58,14 @@ def acompanhar_pedido(id):
         
         status_original = pedido.status
         
-        # Transição: Em Preparação -> Pronto
         if minutos_passados >= pedido.minutos_preparo and pedido.status == "Em preparacao":
             pedido.status = "Pronto"
 
-        # 🔄 CORREÇÃO: Verificar tipo de entrega antes de ir para "Em trânsito"
         if pedido.status == "Pronto":
-            # Se for entrega (delivery), após 2 minutos vai para "Em trânsito"
             if pedido.tipo_retirada == "entrega":
                 if minutos_passados >= (pedido.minutos_preparo + 2):
                     pedido.status = "Em transito"
-            # Se for retirada, NÃO vai para "Em trânsito", fica em "Pronto"
-            # A transição para "Entregue" será feita manualmente pelo estabelecimento
             
-        # Transição: Em Trânsito -> Entregue (apenas para delivery)
         if pedido.tipo_retirada == "entrega":
             if minutos_passados >= (pedido.minutos_preparo + 2 + pedido.minutos_entrega) and pedido.status == "Em transito":
                 pedido.status = "Entregue"
@@ -82,22 +75,24 @@ def acompanhar_pedido(id):
         
     return jsonify(pedido.to_dict()), 200
 
+# Remove um item específico do carrinho
 @pedidos_blueprint.route("/pedidos/itens/<int:item_id>", methods=["DELETE"])
 def deletar_item(item_id):
     try:
-        # Chamamos o Model para fazer o trabalho sujo de deletar no banco
         pedido_atualizado, status = remover_item_do_carrinho(item_id)
         return jsonify(pedido_atualizado), status
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-@pedidos_blueprint.route('/pedidos/<int:id>/forçar-pronto', methods=['PATCH']) #foi só para teste, mative para caso precise novamente, mas não é necessária e não atrapalha em nada
+# Força o status do pedido para "Pronto" (rota auxiliar para testes)
+@pedidos_blueprint.route('/pedidos/<int:id>/forçar-pronto', methods=['PATCH'])
 def forcar_pronto(id):
     pedido = db.session.get(Pedido, id)
     pedido.status = 'Pronto'
     db.session.commit()
     return jsonify({"mensagem": "Status forçado para Pronto!"})
 
+# Lista todos os pedidos de um usuário específico
 @pedidos_blueprint.route("/usuarios/<int:user_id>/pedidos", methods=["GET"])
 def listar_pedidos_usuario(user_id):
     pedidos = Pedido.query.filter_by(usuario_id=user_id).order_by(Pedido.id.desc()).all()
@@ -105,19 +100,17 @@ def listar_pedidos_usuario(user_id):
         print(f"Pedido #{p.id}: tipo_retirada={p.tipo_retirada}, status={p.status}")
     return jsonify([p.to_dict() for p in pedidos]), 200
 
+# Confirma a retirada de um pedido no balcão
 @pedidos_blueprint.route('/pedidos/<int:id>/confirmar-retirada', methods=['PATCH'])
 def confirmar_retirada(id):
-    """Endpoint específico para confirmar retirada de pedidos"""
     pedido = db.session.get(Pedido, id)
     
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-    # 🔄 CORRIGIDO: Verifica o campo correto (tipo_retirada em vez de tipo_entrega)
     if not hasattr(pedido, 'tipo_retirada') or pedido.tipo_retirada != 'retirada':
         return jsonify({"erro": "Este pedido não é para retirada"}), 400
     
-    # 🔄 CORRIGIDO: Verifica status OU status_preparo
     status_pronto = (
         pedido.status == "Pronto" or 
         getattr(pedido, 'status_preparo', '') == 'pronto'
@@ -131,7 +124,6 @@ def confirmar_retirada(id):
         }), 400
     
     try:
-        # Atualiza ambos os campos de status
         pedido.status = "Entregue"
         if hasattr(pedido, 'status_preparo'):
             pedido.status_preparo = 'finalizado'

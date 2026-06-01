@@ -52,7 +52,6 @@ def despachar_pedido(pedido_id):
             taxa_entrega=data.get('taxa', 0.0)
         )
         
-        # Status padronizados
         pedido.status = "Em Trânsito"
         entregador.status = "Em entrega"
         
@@ -72,8 +71,7 @@ def despachar_pedido(pedido_id):
         db.session.rollback()
         return jsonify({"erro": str(e)}), 500
 
-
-# Confirma a entrega do pedido
+# Confirma a entrega do pedido mediante código de verificação
 @entrega_bp.route('/pedido/<int:pedido_id>/confirmar-entrega', methods=['PATCH'])
 def confirmar_entrega(pedido_id):
     data = request.json
@@ -114,8 +112,7 @@ def confirmar_entrega(pedido_id):
         db.session.rollback()
         return jsonify({"erro": str(e)}), 500
 
-
-# Listar entregas de um entregador específico (para o app mobile)
+# Lista todas as entregas (ativas e concluídas) de um entregador específico
 @entrega_bp.route('/entregador/<int:entregador_id>/entregas', methods=['GET'])
 def listar_entregas_entregador(entregador_id):
     entregador = db.session.get(Entregador, entregador_id)
@@ -138,8 +135,7 @@ def listar_entregas_entregador(entregador_id):
         "total_concluidas": len(entregas_concluidas)
     }), 200
 
-
-# Atualizar localização do entregador (para rastreamento)
+# Atualiza a localização em tempo real do entregador para rastreamento
 @entrega_bp.route('/entregador/<int:entregador_id>/localizacao', methods=['PUT'])
 def atualizar_localizacao(entregador_id):
     data = request.json
@@ -154,8 +150,7 @@ def atualizar_localizacao(entregador_id):
         "longitude": data.get('longitude')
     }), 200
 
-
-# Simula o avanço da entrega
+# Simula o avanço do status de um pedido até a entrega final
 @entrega_bp.route('/pedido/<int:pedido_id>/simular-entrega', methods=['POST'])
 def simular_entrega(pedido_id):
     pedido = db.session.get(Pedido, pedido_id)
@@ -163,7 +158,6 @@ def simular_entrega(pedido_id):
     if not pedido:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-
     if pedido.tipo_retirada == "retirada":
         sequencia = ["Em Preparação", "Pronto", "Entregue"]
         mensagens = {

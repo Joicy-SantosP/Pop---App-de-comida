@@ -43,16 +43,14 @@ def adicionar_coluna_sqlite(tabela, coluna, tipo, default=None):
         db.session.rollback()
         return False
 
-def verificar_foreign_key(tabela, coluna):
-    """Verifica se uma FK existe (SQLite)"""
+def verificar_indice_sqlite(tabela, indice_nome):
+    """Verifica se um índice existe (SQLite)"""
     with app.app_context():
         try:
-            resultado = db.session.execute(text(f"PRAGMA foreign_key_list({tabela})")).fetchall()
-            # PRAGMA retorna: (id, seq, table, from, to, on_update, on_delete, match)
-            for row in resultado:
-                if row[3] == coluna:  # row[3] é o 'from' (coluna local)
-                    return True
-            return False
+            resultado = db.session.execute(
+                text(f"SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='{tabela}' AND name='{indice_nome}'")
+            ).fetchone()
+            return resultado is not None
         except:
             return False
 
@@ -85,10 +83,27 @@ def migrar():
         adicionar_coluna_sqlite('entregadores', 'login_token', "VARCHAR(6)")
         adicionar_coluna_sqlite('entregadores', 'login_token_expiration', "DATETIME")
         
-        # ✅ NOVAS COLUNAS PARA LOGIN DE ENTREGADORES
-        print("\n🔐 Adicionando colunas de login para entregadores...")
-        adicionar_coluna_sqlite('entregadores', 'login_token', "VARCHAR(6)")
-        adicionar_coluna_sqlite('entregadores', 'login_token_expiration', "DATETIME")
+        # ✅ NOVAS COLUNAS: CNH E PLACA DO VEÍCULO
+        print("\n🚗 Adicionando colunas CNH e Placa para entregadores...")
+        adicionar_coluna_sqlite('entregadores', 'cnh', "VARCHAR(20)", "'PENDENTE'")
+        adicionar_coluna_sqlite('entregadores', 'placa', "VARCHAR(10)", "'PENDENTE'")
+        
+        # 🆕 Criar índice único para placa (se ainda não existir)
+        print("\n🔍 Verificando índice único para placa...")
+        if not verificar_indice_sqlite('entregadores', 'uq_entregadores_placa'):
+            try:
+                db.session.execute(text(
+                    "CREATE UNIQUE INDEX uq_entregadores_placa ON entregadores(placa)"
+                ))
+                db.session.commit()
+                print("✅ Índice único 'uq_entregadores_placa' criado para placa!")
+            except Exception as e:
+                print(f"⚠️  Não foi possível criar índice único: {e}")
+                print("ℹ️  Isso pode acontecer se já existirem placas duplicadas.")
+                print("ℹ️  Verifique e corrija manualmente as duplicatas.")
+                db.session.rollback()
+        else:
+            print("ℹ️  Índice único para placa já existe.")
         
         # 4. Verificar se a tabela 'usuarios' também precisa dessas colunas
         print("\n👥 Verificando tabela 'usuarios'...")
@@ -142,9 +157,24 @@ def migrar():
                 ))
                 db.session.commit()
                 print("✅ Pedidos atualizados com valores padrão!")
+            
+            if total_entregadores > 0:
+                print("\n⚠️  ATUALIZANDO ENTREGADORES EXISTENTES...")
+                # Atualiza entregadores com CNH e placa pendentes
+                db.session.execute(text(
+                    "UPDATE entregadores SET cnh='PENDENTE' WHERE cnh IS NULL"
+                ))
+                db.session.execute(text(
+                    "UPDATE entregadores SET placa='PENDENTE_' || id WHERE placa IS NULL OR placa='PENDENTE'"
+                ))
+                db.session.commit()
+                print("✅ Entregadores atualizados com CNH e placa provisórias!")
+                print("⚠️  IMPORTANTE: As placas foram definidas como 'PENDENTE_X' (onde X é o ID)")
+                print("⚠️  Atualize as placas reais para evitar duplicatas!")
                 
         except Exception as e:
             print(f"ℹ️  Não foi possível verificar dados: {e}")
+            db.session.rollback()
 
 if __name__ == '__main__':
     migrar()

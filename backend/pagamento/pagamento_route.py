@@ -21,7 +21,7 @@ sdk = mercadopago.SDK(ACCESS_TOKEN)
     
 pagamentos_bp = Blueprint('pagamentos', __name__)
 
-#Cria um pagamento no Mercado Pago e retorna o link pro cliente pagar
+# Cria um pagamento no Mercado Pago e retorna o link para o cliente pagar
 @pagamentos_bp.route('/pagamentos/checkout', methods=['POST'])
 def checkout():
     data = request.json
@@ -110,7 +110,7 @@ def checkout():
     except Exception as e:
         return jsonify({"erro": f"Erro ao criar preferência: {str(e)}"}), 400
     
-# Gera um PDF simples com a nota fiscal do pedido e envia por email, é Chamado automaticamente quando o pagamento é confirmado no webhook
+# Gera um PDF com a nota fiscal do pedido e envia por email ao cliente
 def enviar_nf_pdf(pedido, email_destino):
     pdf = FPDF()
     pdf.add_page()
@@ -134,9 +134,8 @@ def enviar_nf_pdf(pedido, email_destino):
     msg.attach("nota_fiscal.pdf", "application/pdf", pdf_content)
     
     mail.send(msg)
-    
 
-# Consulta o status de um pagamento pelo ID é usado pelo frontend pra ficar consultando se o pagamento foi aprovado.
+# Consulta o status de um pagamento pelo ID para o frontend verificar aprovação
 @pagamentos_bp.route('/pagamentos/<int:id>/status', methods=['GET'])
 def verificar_status(id):
     pagamento = Pagamento.query.get_or_404(id)
@@ -173,7 +172,7 @@ def verificar_status_por_pedido(pedido_id):
         "total": pagamento.total_final
     }), 200
 
-# Webhook que o Mercado Pago chama quando um pagamento é aprovado/rejeitado, retorna a resposta do pagamento do pedido
+# Webhook que o Mercado Pago chama quando um pagamento é aprovado ou rejeitado
 @pagamentos_bp.route('/webhooks/mercadopago', methods=['POST'])
 def webhook_mp():
     data_json = request.get_json() or {}
@@ -247,12 +246,12 @@ def webhook_mp():
 
     return "", 200
 
-#redireciona a tela do mercado pago de volta para o site depois do pagamento
+# Redireciona o cliente de volta para o site após o pagamento no Mercado Pago
 @pagamentos_bp.route('/pagamentos/retorno-sucesso')
 def retorno_sucesso():
     return redirect("http://localhost:5173/dashboard")
 
-# Calcula a taxa de entrega e tempo estimado antes de finalizar o pedido
+# Calcula a taxa de entrega e o tempo estimado antes de finalizar o pedido
 @pagamentos_bp.route('/pagamentos/calcular-taxa', methods=['POST'])
 def consultar_taxa():
     data = request.json
@@ -310,14 +309,9 @@ def consultar_taxa():
     print("📤 RESPOSTA:", resposta)
     return jsonify(resposta)
 
-
-# Rota para criar pagamento PIX
+# Cria um pagamento PIX via API de Orders do Mercado Pago e retorna o QR Code
 @pagamentos_bp.route('/pagamentos/pix', methods=['POST'])
 def criar_pix():
-    """
-    Cria um pagamento PIX via API de Orders do Mercado Pago
-    Retorna o QR Code para o front-end exibir
-    """
     data = request.json
     tipo_envio = data.get('tipo_envio')
     
@@ -345,7 +339,7 @@ def criar_pix():
     
     novo_pagamento = Pagamento(
         pedido_id=id_do_pedido, 
-        metodo=data.get('metodo_id'),  # 1 = PIX
+        metodo=data.get('metodo_id'),
         subtotal=data.get('subtotal', 0.0),
         taxa_entrega=valor_taxa
     )
@@ -452,11 +446,9 @@ def criar_pix():
         db.session.rollback()
         return jsonify({"erro": f"Erro ao criar pagamento PIX: {str(e)}"}), 400
     
-# Rota TEMPORÁRIA para simular aprovação de pagamento (apenas para testes)
+# Simula a aprovação de um pagamento para fins de teste acadêmico
 @pagamentos_bp.route('/pagamentos/simular-aprovacao/<int:pedido_id>', methods=['POST'])
 def simular_aprovacao(pedido_id):
-    """Simula a aprovação de um pagamento para fins de teste acadêmico"""
-    
     pagamento = Pagamento.query.filter_by(
         pedido_id=pedido_id
     ).order_by(Pagamento.id.desc()).first()
@@ -464,7 +456,6 @@ def simular_aprovacao(pedido_id):
     if not pagamento:
         return jsonify({"erro": "Pagamento não encontrado"}), 404
     
-    # Atualiza o status
     pagamento.status = "Pagamento Confirmado"
     
     if pagamento.pedido:
@@ -489,10 +480,10 @@ def simular_aprovacao(pedido_id):
         "status": pagamento.status,
         "pedido_status": pagamento.pedido.status if pagamento.pedido else None
     }), 200
-    
+
+# Cria um checkout específico para pedidos com retirada no local (sem taxa de entrega)
 @pagamentos_bp.route('/pagamentos/checkout-retirada', methods=['POST'])
 def checkout_retirada():
-    """Checkout para retirada no local"""
     data = request.json
     id_do_pedido = data.get('pedido_id')
     pedido_no_banco = Pedido.query.get(id_do_pedido)
@@ -500,14 +491,13 @@ def checkout_retirada():
     if not pedido_no_banco:
         return jsonify({"erro": "Pedido não encontrado"}), 404
     
-    # Configura pedido como retirada
     pedido_no_banco.tipo_retirada = 'retirada'
     
     novo_pagamento = Pagamento(
         pedido_id=id_do_pedido, 
         metodo=data.get('metodo_id'),
         subtotal=data.get('subtotal', 0.0),
-        taxa_entrega=0.0  # Retirada: sem taxa
+        taxa_entrega=0.0
     )
     
     sucesso_validacao, mensagem = novo_pagamento.validar_pagamento(pedido_no_banco)
@@ -562,13 +552,10 @@ def checkout_retirada():
     except Exception as e:
         return jsonify({"erro": f"Erro ao criar preferência: {str(e)}"}), 400
 
-
-# Endpoint que o painel consulta periodicamente
+# Retorna os pedidos prontos para exibição no painel de retirada
 @pagamentos_bp.route('/painel/pedidos-prontos', methods=['GET'])
 def pedidos_prontos_painel():
-    """Retorna pedidos prontos para exibição no painel"""
     try:
-        # 🔄 CORRIGIDO: Usando data_preparo_inicio e id como fallback
         pedidos_prontos = Pedido.query.filter(
             Pedido.tipo_retirada =='retirada',
             Pedido.status =='Pronto'
@@ -590,11 +577,9 @@ def pedidos_prontos_painel():
         traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
 
-
-# Endpoint para simular mudança de status (será substituído pelo sistema do restaurante)
+# Atualiza o status de preparo de um pedido pelo painel administrativo
 @pagamentos_bp.route('/admin/atualizar-status-pedido/<int:pedido_id>', methods=['PUT'])
 def atualizar_status_pedido(pedido_id):
-    """Endpoint administrativo para mudar status dos pedidos"""
     data = request.json
     novo_status = data.get('status_preparo')
     
@@ -611,10 +596,10 @@ def atualizar_status_pedido(pedido_id):
         "numero_senha": pedido.numero_senha,
         "status_preparo": pedido.status_preparo
     }), 200
-    
+
+# Confirma que o cliente retirou o pedido no balcão
 @pagamentos_bp.route('/pedido/<int:pedido_id>/confirmar-retirada', methods=['PUT'])
 def confirmar_retirada(pedido_id):
-    """Confirma que o cliente retirou o pedido"""
     try:
         data = request.json
         pedido = db.session.get(Pedido, pedido_id)

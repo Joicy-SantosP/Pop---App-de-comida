@@ -1,5 +1,3 @@
-# produto_model.py
-
 from config import db
 
 class Produto(db.Model):

@@ -7,13 +7,9 @@ from usuarios.auth.social_auth_model import SocialAuth
 from usuarios.usuario_model import Usuario
 from config import db
 from datetime import datetime
-
-
 from usuarios.auth.social_auth_service import login_social
-
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
-
 
 social_auth_bp = Blueprint("social_auth", __name__)
 
@@ -25,7 +21,7 @@ FB_CLIENT_ID = os.getenv("FACEBOOK_CLIENT_ID")
 FB_CLIENT_SECRET = os.getenv("FACEBOOK_CLIENT_SECRET")
 FB_REDIRECT_URI = "http://localhost:5000/auth/fb/callback"
 
-
+# Redireciona o usuário para a tela de login do Google
 @social_auth_bp.route("/google")
 def google_login():
     base_url = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -40,7 +36,7 @@ def google_login():
     url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return redirect(url)
 
-
+# Recebe o callback do Google, valida o token e autentica ou redireciona para completar cadastro
 @social_auth_bp.route("/google/callback")
 def google_callback():
     code = request.args.get("code")
@@ -74,7 +70,6 @@ def google_callback():
     provider_user_id = idinfo["sub"]
     email = idinfo["email"]
 
-
     user = login_social(
         provider="google",
         provider_user_id=provider_user_id,
@@ -96,7 +91,8 @@ def google_callback():
         f"&provider_user_id={provider_user_id}"
         f"&email={email}"
     )
-    
+
+# Redireciona o usuário para a tela de login do Facebook
 @social_auth_bp.route("/facebook")
 def facebook_login():
     base_url = "https://www.facebook.com/v19.0/dialog/oauth"
@@ -109,6 +105,7 @@ def facebook_login():
     url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return redirect(url)
 
+# Recebe o callback do Facebook, valida o token e autentica ou redireciona para completar cadastro
 @social_auth_bp.route("/fb/callback")
 def facebook_callback():
     code = request.args.get("code")
@@ -145,7 +142,7 @@ def facebook_callback():
     )
 
     if user:
-        access_token=create_access_token(identity=user.id)
+        access_token = create_access_token(identity=user.id)
         return redirect(
             f"http://localhost:5173/dashboard"
             f"?token={access_token}"
@@ -159,7 +156,8 @@ def facebook_callback():
         f"&provider_user_id={provider_user_id}"
         f"&email={email}"
     )
-    
+
+# Completa o cadastro de um usuário que fez login social pela primeira vez
 @social_auth_bp.route("/cadastro-complementar", methods=["POST"])
 def complete_social_register():
     data = request.get_json()
@@ -192,7 +190,6 @@ def complete_social_register():
     db.session.commit()
     
     access_token = create_access_token(identity=user.id)
-    
 
     return jsonify({"message": "Cadastro completo",
                     "usuario_id": user.id,
@@ -200,5 +197,5 @@ def complete_social_register():
                     "usuario":{
                         "id": user.id,
                         "email": user.email,
-                        "nome":user.nome}
+                        "nome": user.nome}
                     }), 200

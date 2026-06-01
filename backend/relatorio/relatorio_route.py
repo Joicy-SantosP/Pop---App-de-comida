@@ -11,31 +11,26 @@ from endereco.endereco_model import Endereco
 
 relatorio_bp = Blueprint('relatorio', __name__, url_prefix='/api/relatorio')
 
-
+# Retorna o relatório completo do dashboard com dados de restaurantes, produtos mais vendidos e entregadores
 @relatorio_bp.route('/dashboard', methods=['GET'])
 def relatorio_completo():
-    """Relatório completo com dados de restaurantes, produtos e entregadores"""
     try:
         mes = request.args.get('mes', datetime.now().month, type=int)
         ano = request.args.get('ano', datetime.now().year, type=int)
         
-        # ==================== 1. RELATÓRIO DE RESTAURANTES ====================
         restaurantes = Restaurantes.query.all()
         dados_restaurantes = []
         
         for rest in restaurantes:
-            # Busca pedidos ENTREGUES do restaurante no período (não cancelados)
             pedidos_mes = Pedido.query.filter(
                 Pedido.restaurante_id == rest.id,
                 extract('month', Pedido.data_preparo_inicio) == mes,
                 extract('year', Pedido.data_preparo_inicio) == ano,
-                Pedido.status == 'Entregue'  # ← ALTERADO para 'Entregue'
+                Pedido.status == 'Entregue'
             ).all()
             
-            # Faturamento total
             faturamento = sum(p.total for p in pedidos_mes)
             
-            # Maior cidade de entrega
             maior_cidade = db.session.query(
                 Endereco.cidade,
                 func.count(Pedido.id).label('total_pedidos')
@@ -45,14 +40,13 @@ def relatorio_completo():
                  Pedido.restaurante_id == rest.id,
                  extract('month', Pedido.data_preparo_inicio) == mes,
                  extract('year', Pedido.data_preparo_inicio) == ano,
-                 Pedido.status == 'Entregue',  # ← ALTERADO
+                 Pedido.status == 'Entregue',
                  Endereco.principal == True
              )\
              .group_by(Endereco.cidade)\
              .order_by(func.count(Pedido.id).desc())\
              .first()
             
-            # Maior bairro de entrega
             maior_bairro = db.session.query(
                 Endereco.bairro,
                 func.count(Pedido.id).label('total_pedidos')
@@ -62,7 +56,7 @@ def relatorio_completo():
                  Pedido.restaurante_id == rest.id,
                  extract('month', Pedido.data_preparo_inicio) == mes,
                  extract('year', Pedido.data_preparo_inicio) == ano,
-                 Pedido.status == 'Entregue',  # ← ALTERADO
+                 Pedido.status == 'Entregue',
                  Endereco.principal == True
              )\
              .group_by(Endereco.bairro)\
@@ -79,7 +73,6 @@ def relatorio_completo():
                 'especialidade': rest.especialidade
             })
         
-        # ==================== 2. PRODUTOS MAIS VENDIDOS ====================
         produtos_mais_vendidos = db.session.query(
             Restaurantes.nome.label('restaurante'),
             ItemPedido.nome_doce.label('produto'),
@@ -90,13 +83,12 @@ def relatorio_completo():
          .filter(
              extract('month', Pedido.data_preparo_inicio) == mes,
              extract('year', Pedido.data_preparo_inicio) == ano,
-             Pedido.status == 'Entregue'  # ← ALTERADO
+             Pedido.status == 'Entregue'
          )\
          .group_by(Restaurantes.id, ItemPedido.nome_doce)\
          .order_by(Restaurantes.id, func.sum(ItemPedido.quantidade).desc())\
          .all()
         
-        # Pega top 1 produto por restaurante
         top_produtos_por_restaurante = []
         restaurantes_vistos = set()
         
@@ -110,12 +102,10 @@ def relatorio_completo():
                     'faturamento_produto': round(item.faturamento_total, 2)
                 })
         
-        # ==================== 3. RELATÓRIO DE ENTREGADORES ====================
         entregadores = Entregador.query.all()
         dados_entregadores = []
         
         for entregador in entregadores:
-            # Busca entregas concluídas no período (baseado nas entregas com data_conclusao)
             entregas_mes = Entrega.query.filter(
                 Entrega.entregador_id == entregador.id,
                 extract('month', Entrega.data_conclusao) == mes,
@@ -123,7 +113,6 @@ def relatorio_completo():
                 Entrega.data_conclusao.isnot(None)
             ).all()
             
-            # Maior cidade de entrega
             maior_cidade_entrega = db.session.query(
                 Endereco.cidade,
                 func.count(Entrega.id).label('total_entregas')
@@ -169,10 +158,9 @@ def relatorio_completo():
             'error': str(e)
         }), 500
 
-
+# Retorna relatório detalhado de restaurantes com faturamento e distribuição por cidade
 @relatorio_bp.route('/restaurantes', methods=['GET'])
 def relatorio_restaurantes():
-    """Relatório específico de restaurantes"""
     try:
         mes = request.args.get('mes', datetime.now().month, type=int)
         ano = request.args.get('ano', datetime.now().year, type=int)
@@ -181,17 +169,15 @@ def relatorio_restaurantes():
         dados = []
         
         for rest in restaurantes:
-            # Pedidos ENTREGUES no período (não cancelados)
             pedidos_mes = Pedido.query.filter(
                 Pedido.restaurante_id == rest.id,
                 extract('month', Pedido.data_preparo_inicio) == mes,
                 extract('year', Pedido.data_preparo_inicio) == ano,
-                Pedido.status == 'Entregue'  # ← ALTERADO
+                Pedido.status == 'Entregue'
             ).all()
             
             faturamento = sum(p.total for p in pedidos_mes)
             
-            # Distribuição por cidade (apenas entregues)
             cidades = db.session.query(
                 Endereco.cidade,
                 func.count(Pedido.id).label('total')
@@ -201,7 +187,7 @@ def relatorio_restaurantes():
                  Pedido.restaurante_id == rest.id,
                  extract('month', Pedido.data_preparo_inicio) == mes,
                  extract('year', Pedido.data_preparo_inicio) == ano,
-                 Pedido.status == 'Entregue',  # ← ALTERADO
+                 Pedido.status == 'Entregue',
                  Endereco.principal == True
              )\
              .group_by(Endereco.cidade)\
@@ -230,10 +216,9 @@ def relatorio_restaurantes():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Retorna relatório detalhado de entregadores com quantidade de entregas e distribuição por cidade
 @relatorio_bp.route('/entregadores', methods=['GET'])
 def relatorio_entregadores():
-    """Relatório específico de entregadores"""
     try:
         mes = request.args.get('mes', datetime.now().month, type=int)
         ano = request.args.get('ano', datetime.now().year, type=int)
@@ -249,7 +234,6 @@ def relatorio_entregadores():
                 Entrega.data_conclusao.isnot(None)
             ).all()
             
-            # Distribuição por cidade
             cidades = db.session.query(
                 Endereco.cidade,
                 func.count(Entrega.id).label('total')
@@ -288,44 +272,37 @@ def relatorio_entregadores():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Retorna um resumo do dashboard com indicadores principais (KPIs) para cards
 @relatorio_bp.route('/dashboard/resumo', methods=['GET'])
 def relatorio_resumido():
-    """Versão resumida do dashboard para cards/KPIs"""
     try:
         mes = request.args.get('mes', datetime.now().month, type=int)
         ano = request.args.get('ano', datetime.now().year, type=int)
         
-        # Total de pedidos ENTREGUES no período
         total_pedidos = Pedido.query.filter(
             extract('month', Pedido.data_preparo_inicio) == mes,
             extract('year', Pedido.data_preparo_inicio) == ano,
-            Pedido.status == 'Entregue'  # ← ALTERADO
+            Pedido.status == 'Entregue'
         ).count()
         
-        # Faturamento total (apenas entregues)
         faturamento_total = db.session.query(
             func.sum(Pedido.total)
         ).filter(
             extract('month', Pedido.data_preparo_inicio) == mes,
             extract('year', Pedido.data_preparo_inicio) == ano,
-            Pedido.status == 'Entregue'  # ← ALTERADO
+            Pedido.status == 'Entregue'
         ).scalar() or 0
         
-        # Total de entregas
         total_entregas = Entrega.query.filter(
             extract('month', Entrega.data_conclusao) == mes,
             extract('year', Entrega.data_conclusao) == ano,
             Entrega.data_conclusao.isnot(None)
         ).count()
         
-        # Restaurantes ativos
         restaurantes_ativos = Restaurantes.query.filter_by(aberto=True).count()
         
-        # Ticket médio
         ticket_medio = faturamento_total / total_pedidos if total_pedidos > 0 else 0
         
-        # Cidade com mais pedidos
         cidade_top = db.session.query(
             Endereco.cidade,
             func.count(Pedido.id).label('total')
@@ -334,7 +311,7 @@ def relatorio_resumido():
          .filter(
              extract('month', Pedido.data_preparo_inicio) == mes,
              extract('year', Pedido.data_preparo_inicio) == ano,
-             Pedido.status == 'Entregue',  # ← ALTERADO
+             Pedido.status == 'Entregue',
              Endereco.principal == True
          )\
          .group_by(Endereco.cidade)\

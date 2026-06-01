@@ -7,25 +7,24 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from datetime import datetime, timedelta
 import random
 
-# Gera um código de 6 dígitos para validação por email
 def generate_token():
     return str(random.randint(100000, 999999))
 
 entregador_bp = Blueprint('entregador_routes', __name__, url_prefix='/entregadores')
-
-# =============================================
-# ROTAS DE CADASTRO E VERIFICAÇÃO
-# =============================================
 
 # Cadastra um novo entregador no sistema e envia um código de validação do email
 @entregador_bp.route('/', methods=['POST'])
 def criar_entregador():
     dados = request.json
 
-    campos_obrigatorios = ["nome", "cpf", "telefone", "email", "veiculo"]
+    campos_obrigatorios = ["nome", "cpf", "telefone", "email", "veiculo", "cnh", "placa"] 
     for campo in campos_obrigatorios:
         if not dados.get(campo):
             return jsonify({"erro": f"O campo {campo} é obrigatório"}), 400
+        
+    placa = dados.get('placa', '').upper().replace('-', '').replace(' ', '')
+    if not placa or len(placa) != 7:
+        return jsonify({"erro": "Placa inválida. Deve conter 7 caracteres."}), 400
 
     email = dados.get("email") 
     if len(email) > 100 or email.isdigit():
@@ -37,6 +36,8 @@ def criar_entregador():
         email=email,
         telefone=dados.get('telefone'),
         veiculo=dados.get('veiculo'),
+        cnh=dados.get('cnh'),
+        placa=placa,  
         status='Disponível',
         foto=dados.get('foto')
     )
@@ -48,9 +49,17 @@ def criar_entregador():
     try:
         db.session.add(novo_entregador)
         db.session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
-        return jsonify({"error": "CPF ou Email já cadastrados."}), 400
+        erro_msg = str(e.orig).lower() if e.orig else ''
+        if 'cpf' in erro_msg or 'cpf' in str(e).lower():
+            return jsonify({"error": "CPF já cadastrado."}), 400
+        elif 'placa' in erro_msg or 'placa' in str(e).lower():
+            return jsonify({"error": "Placa já cadastrada. Cada veículo deve ter uma placa única."}), 400
+        elif 'email' in erro_msg:
+            return jsonify({"error": "Email já cadastrado."}), 400
+        else:
+            return jsonify({"error": "Dados duplicados. Verifique CPF, email e placa."}), 400
 
     send_email(
         to_email=email,
@@ -94,15 +103,9 @@ def validar_codigo():
     
     return jsonify({"mensagem": "Email validado com sucesso. Cadastro concluído."}), 200
 
-
-# =============================================
-# ROTAS DE LOGIN (PASSWORDLESS)
-# =============================================
-
-# Solicita login: envia código de 6 dígitos por email
+# Solicita login do entregador enviando código de acesso por email
 @entregador_bp.route("/login/request", methods=["POST"])
 def request_login():
-    """Solicita código de acesso para login do entregador"""
     data = request.get_json()
     email = data.get("email")
 
@@ -141,7 +144,6 @@ Não informe este código a ninguém."""
 # Verifica o código de login e gera o token JWT de acesso
 @entregador_bp.route("/login/verify", methods=["POST"])
 def verify_login():
-    """Verifica código e retorna token JWT para o entregador"""
     data = request.get_json()
     email = data.get("email")
     codigo = data.get("codigo")
@@ -163,7 +165,6 @@ def verify_login():
     if datetime.utcnow() > entregador.login_token_expiration:
         return jsonify({"erro": "Código expirado. Solicite um novo."}), 400
 
-    # Gera token JWT com identidade do entregador
     access_token = create_access_token(
         identity=str(entregador.id),
         additional_claims={
@@ -173,7 +174,6 @@ def verify_login():
         }
     )
 
-    # Limpa o token de login
     entregador.login_token = None
     entregador.login_token_expiration = None
     db.session.commit()
@@ -190,11 +190,10 @@ def verify_login():
         }
     }), 200
 
-# Verifica se o token JWT é válido e retorna dados do entregador
+# Retorna os dados do entregador autenticado via token JWT
 @entregador_bp.route("/me", methods=["GET"])
 @jwt_required()
 def obter_entregador_logado():
-    """Retorna dados do entregador autenticado"""
     entregador_id = get_jwt_identity()
     entregador = Entregador.query.get(int(entregador_id))
     
@@ -203,11 +202,10 @@ def obter_entregador_logado():
     
     return jsonify(entregador.to_dict()), 200
 
-# Logout - invalida o token (opcional, depende da estratégia)
+# Realiza o logout do entregador tornando-o indisponível
 @entregador_bp.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    """Registra logout do entregador"""
     entregador_id = get_jwt_identity()
     entregador = Entregador.query.get(int(entregador_id))
     
@@ -218,25 +216,25 @@ def logout():
     
     return jsonify({"mensagem": "Logout realizado com sucesso"}), 200
 
-
-# =============================================
-# ROTAS CRUD E GERENCIAMENTO
-# =============================================
-
 # Atualiza os dados de um entregador existente
 @entregador_bp.route('/<int:id>', methods=['PUT'])
-@jwt_required()  # Protegido com JWT
+@jwt_required()
 def atualizar_entregador(id):
     entregador = Entregador.query.get_or_404(id)
     dados = request.json
 
-    # Verifica se o token pertence a este entregador
     entregador_id = int(get_jwt_identity())
     if entregador_id != id:
         return jsonify({"erro": "Não autorizado"}), 403
 
     if 'cpf' in dados and dados['cpf'] != entregador.cpf:
         return jsonify({"error": "Regra de Negócio: O CPF não pode ser alterado."}), 400
+    
+    if 'placa' in dados:
+        placa = dados['placa'].upper().replace('-', '').replace(' ', '')
+        if len(placa) != 7:
+            return jsonify({"erro": "Placa inválida. Deve conter 7 caracteres."}), 400
+        entregador.placa = placa
         
     if 'telefone' in dados:
         entregador.telefone = dados['telefone']
@@ -251,9 +249,12 @@ def atualizar_entregador(id):
         
     try:
         db.session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
-        return jsonify({"error": "Erro de integridade ao atualizar."}), 400
+        erro_msg = str(e.orig).lower() if e.orig else ''
+        if 'placa' in erro_msg:
+            return jsonify({"error": "Esta placa já está em uso por outro entregador."}), 400
+        return jsonify({"error": "Erro de integridade ao atualizar. Verifique os dados."}), 400
         
     return jsonify(entregador.to_dict()), 200
 
@@ -269,7 +270,7 @@ def obter_entregador(id):
     entregador = Entregador.query.get_or_404(id)
     return jsonify(entregador.to_dict()), 200
 
-# Inativa um entregador
+# Inativa um entregador (torna indisponível sem remover do sistema)
 @entregador_bp.route('/<int:id>/inativar', methods=['PATCH'])
 @jwt_required()
 def inativar_entregador(id):

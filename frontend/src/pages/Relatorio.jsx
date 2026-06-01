@@ -89,80 +89,24 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
   const nomeMes = meses.find(m => m.valor === mes)?.nome || '';
 
   return (
-    <div style={{
-      backgroundColor: '#fdf2f5',
-      fontFamily: 'sans-serif',
-      padding: '24px'
-    }}>
+    <div style={{ backgroundColor: '#fdf2f5', fontFamily: 'sans-serif', padding: '24px' }}>
       
       {/* CABEÇALHO */}
-      <header style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '32px',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div>
-          <h1 style={{
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            color: '#1f2937',
-            margin: 0
-          }}>
-            Relatórios <span style={{ color: '#ff5d8f' }}>POP!</span>
-          </h1>
+      <header style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+        <div> <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}> Relatórios <span style={{ color: '#ff5d8f' }}>POP!</span> </h1>
           <p style={{ color: '#6b7280', margin: '4px 0 0 0', fontSize: '0.95rem' }}>
             Inteligência de dados e performance operacional
           </p>
         </div>
         
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          backgroundColor: '#fff',
-          padding: '8px',
-          borderRadius: '16px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #fbcfe8',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <select 
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              outline: 'none',
-              padding: '8px 16px',
-              fontWeight: '500',
-              color: '#374151',
-              cursor: 'pointer',
-              fontSize: '0.95rem'
-            }}
-            value={mes}
-            onChange={(e) => setMes(Number(e.target.value))}
-          >
+        <div style={{ display: 'flex', gap: '12px', backgroundColor: '#fff', padding: '8px', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fbcfe8', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '8px 16px', fontWeight: '500', color: '#374151', cursor: 'pointer', fontSize: '0.95rem' }} value={mes} onChange={(e) => setMes(Number(e.target.value))} >
             {meses.map(m => (
               <option key={m.valor} value={m.valor}>{m.nome}</option>
             ))}
           </select>
           
-          <select 
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              outline: 'none',
-              padding: '8px 16px',
-              fontWeight: '500',
-              color: '#374151',
-              cursor: 'pointer',
-              fontSize: '0.95rem'
-            }}
-            value={ano}
-            onChange={(e) => setAno(Number(e.target.value))}
-          >
+          <select style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '8px 16px', fontWeight: '500', color: '#374151', cursor: 'pointer', fontSize: '0.95rem' }} value={ano} onChange={(e) => setAno(Number(e.target.value))} >
             {anos.map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -171,18 +115,7 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
           <button 
             onClick={handleFiltrar}
             disabled={loading}
-            style={{
-              backgroundColor: loading ? '#f9a8d4' : '#ff5d8f',
-              color: '#fff',
-              padding: '8px 24px',
-              borderRadius: '12px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-              fontSize: '0.95rem',
-              boxShadow: '0 2px 4px rgba(255,93,143,0.3)'
-            }}
+            style={{ backgroundColor: loading ? '#f9a8d4' : '#ff5d8f', color: '#fff', padding: '8px 24px', borderRadius: '12px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', fontSize: '0.95rem', boxShadow: '0 2px 4px rgba(255,93,143,0.3)' }}
           >
             {loading ? '⏳ Carregando...' : '🔍 Filtrar'}
           </button>
@@ -190,12 +123,7 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
       </header>
 
       {loading && (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px',
-          color: '#ff5d8f',
-          fontSize: '1.2rem'
-        }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#ff5d8f', fontSize: '1.2rem' }}>
           <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🐜</div>
           Carregando relatórios...
         </div>
@@ -204,36 +132,10 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
       {!loading && (
         <>
           {/* CARDS DE RESUMO (KPIs) */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '24px',
-            marginBottom: '32px'
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
             
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              border: '1px solid #fce7f3'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                backgroundColor: '#fce7f3',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                color: '#ff5d8f'
-              }}>
-                💰
-              </div>
+            <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #fce7f3' }}>
+              <div style={{ width: '56px', height: '56px', backgroundColor: '#fce7f3', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#ff5d8f' }}> 💰 </div>
               <div>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', margin: 0 }}>
                   Faturamento Total
@@ -244,28 +146,8 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              border: '1px solid #fce7f3'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                backgroundColor: '#ffedd5',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem'
-              }}>
-                📦
-              </div>
+            <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #fce7f3' }}>
+              <div style={{ width: '56px', height: '56px', backgroundColor: '#ffedd5', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}> 📦 </div>
               <div>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', margin: 0 }}>
                   Total Pedidos
@@ -276,28 +158,8 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              border: '1px solid #fce7f3'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                backgroundColor: '#dbeafe',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem'
-              }}>
-                🛵
-              </div>
+            <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #fce7f3' }}>
+              <div style={{ width: '56px', height: '56px', backgroundColor: '#dbeafe', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}> 🛵 </div>
               <div>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', margin: 0 }}>
                   Entregas Feitas
@@ -308,28 +170,8 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              border: '1px solid #fce7f3'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                backgroundColor: '#d1fae5',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem'
-              }}>
-                📈
-              </div>
+            <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '16px', border: '1px solid #fce7f3' }}>
+              <div style={{ width: '56px', height: '56px', backgroundColor: '#d1fae5', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}> 📈 </div>
               <div>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', margin: 0 }}>
                   Ticket Médio
@@ -343,18 +185,7 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
           </div>
 
           {/* Período e Cidade Destaque */}
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '16px 24px',
-            borderRadius: '16px',
-            marginBottom: '32px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            border: '1px solid #fce7f3',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
+          <div style={{ backgroundColor: '#fff', padding: '16px 24px', borderRadius: '16px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #fce7f3', flexWrap: 'wrap', gap: '12px' }}>
             <p style={{ margin: 0, color: '#6b7280', fontWeight: '500' }}>
               📅 Período: <strong>{nomeMes}/{ano}</strong>
             </p>
@@ -364,40 +195,15 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
           </div>
 
           {/* SEÇÃO PRINCIPAL (TABELAS E LISTAS) */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
-            gap: '32px'
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '32px' }}>
             
             {/* TABELA DE RESTAURANTES */}
-            <section style={{
-              backgroundColor: '#fff',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              overflow: 'hidden',
-              border: '1px solid #fce7f3'
-            }}>
-              <div style={{
-                padding: '24px',
-                borderBottom: '1px solid #f3f4f6',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
+            <section style={{ backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden', border: '1px solid #fce7f3' }}>
+              <div style={{ padding: '24px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
                   Performance de Restaurantes
                 </h2>
-                <span style={{
-                  fontSize: '0.75rem',
-                  backgroundColor: '#fce7f3',
-                  padding: '4px 12px',
-                  borderRadius: '9999px',
-                  fontWeight: 'bold',
-                  color: '#ff5d8f'
-                }}>
-                  TOP 3
-                </span>
+                <span style={{ fontSize: '0.75rem', backgroundColor: '#fce7f3', padding: '4px 12px', borderRadius: '9999px', fontWeight: 'bold', color: '#ff5d8f' }}> TOP 3 </span>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -443,13 +249,7 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
             </section>
 
             {/* LISTA DE PRODUTOS */}
-            <section style={{
-              backgroundColor: '#fff',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              padding: '24px',
-              border: '1px solid #fce7f3'
-            }}>
+            <section style={{ backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px', border: '1px solid #fce7f3' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '24px' }}>
                 Produtos Mais Vendidos
               </h2>
@@ -457,32 +257,12 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
                 
                 {dados.produtos.length > 0 ? (
                   dados.produtos.map((prod, index) => (
-                    <div key={index} style={{
-                      backgroundColor: '#fff',
-                      padding: '16px',
-                      borderRadius: '16px',
-                      border: '1px solid #f3f4f6',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      transition: 'all 0.2s'
-                    }}
+                    <div key={index} style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '16px', border: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}
                       onMouseEnter={(e) => e.currentTarget.style.borderColor = '#f9a8d4'}
                       onMouseLeave={(e) => e.currentTarget.style.borderColor = '#f3f4f6'}
                     >
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          backgroundColor: '#fce7f3',
-                          borderRadius: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          color: '#ff5d8f',
-                          fontSize: '1.25rem'
-                        }}>
+                        <div style={{ width: '48px', height: '48px', backgroundColor: '#fce7f3', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#ff5d8f', fontSize: '1.25rem' }}>
                           {index + 1}º
                         </div>
                         <div>
@@ -514,14 +294,7 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
             </section>
 
             {/* ENTREGADORES DESTAQUE */}
-            <section style={{
-              backgroundColor: '#fff',
-              borderRadius: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              padding: '24px',
-              border: '1px solid #fce7f3',
-              gridColumn: '1 / -1'
-            }}>
+            <section style={{ backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px', border: '1px solid #fce7f3', gridColumn: '1 / -1' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
                   Entregadores Destaque
@@ -536,27 +309,9 @@ const Relatorio = ({ onClose, setTelaAtual }) => {
                 
                 {dados.entregadores.length > 0 ? (
                   dados.entregadores.map((ent, index) => (
-                    <div key={index} style={{
-                      backgroundColor: '#f9fafb',
-                      padding: '20px',
-                      borderRadius: '24px',
-                      border: '1px solid #f3f4f6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}>
+                    <div key={index} style={{ backgroundColor: '#f9fafb', padding: '20px', borderRadius: '24px', border: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          backgroundColor: '#fff',
-                          borderRadius: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1.5rem',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                        }}>
+                        <div style={{ width: '48px', height: '48px', backgroundColor: '#fff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                           {ent.veiculo === 'moto' ? '🏍️' : ent.veiculo === 'bicicleta' ? '🚲' : '🛵'}
                         </div>
                         <div>

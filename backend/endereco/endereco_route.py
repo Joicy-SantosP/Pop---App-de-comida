@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify
 from .endereco_model import Endereco, db
-from geopy.geocoders import Nominatim # biblioteca gratuita de geolocalização 
-import requests #biblioteca para fazer chamadas em APIs externas
+from geopy.geocoders import Nominatim
+import requests
 
 endereco_bp = Blueprint('enderecos', __name__)
-geolocator = Nominatim(user_agent="pop_doces_endereco") # Instância do geolocator Nominatim (converte endereços em coordenadas e converte endereços em coordenadas) com user personalizado para nossa api
+geolocator = Nominatim(user_agent="pop_doces_endereco")
 
 # Busca informações de um CEP na API ViaCEP
 @endereco_bp.route('/cep/<string:cep_input>', methods=['GET'])
@@ -110,7 +110,7 @@ def buscar_endereco_detalhado(id):
         "principal": endereco.principal
     }), 200
 
-
+# Atualiza os dados de um endereço existente
 @endereco_bp.route('/<int:id>', methods=['PUT'])
 def editar_endereco(id):
     endereco = Endereco.query.get_or_404(id)
@@ -138,9 +138,10 @@ def editar_endereco(id):
     db.session.commit()
     return jsonify({"mensagem": "Endereço atualizado com sucesso!"}), 200
 
+# Busca sugestões de endereços com base em um texto de consulta
 @endereco_bp.route('/buscar-sugestoes', methods=['GET'])
 def buscar_sugestoes():
-    query = request.args.get('q') # O texto que o usuário digita
+    query = request.args.get('q')
     if not query:
         return jsonify([]), 200
     
@@ -159,6 +160,7 @@ def buscar_sugestoes():
     
     return jsonify(results), 200
 
+# Realiza geocodificação reversa a partir de coordenadas geográficas
 @endereco_bp.route('/reversa', methods=['GET'])
 def geocode_reversa():
     lat = request.args.get('lat')
@@ -167,6 +169,7 @@ def geocode_reversa():
     location = geolocator.reverse(f"{lat}, {lon}")
     return jsonify(location.raw['address']), 200
 
+# Desativa logicamente um endereço (exclusão lógica)
 @endereco_bp.route('/<int:id>', methods=['DELETE'])
 def excluir_endereco(id):
     endereco = Endereco.query.get_or_404(id)

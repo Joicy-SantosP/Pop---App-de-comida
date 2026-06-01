@@ -95,13 +95,12 @@ function ModalPix({
       const dadosSimulacao = await responseSimulacao.json();
       
       if (responseSimulacao.ok) {
-        setPagamentoConfirmado(true); // ← Ativa a tela de sucesso
+        setPagamentoConfirmado(true);
         
-        // Espera 3 segundos e depois redireciona
         setTimeout(() => {
           onPagamentoConfirmado();
           onClose();
-        }, 3000); // 3000ms = 3 segundos
+        }, 3000);
         
       } else {
         const response = await fetch(
@@ -127,57 +126,13 @@ function ModalPix({
   if (!isOpen) return null;
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.6)', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      zIndex: 99999 
-    }}>
-      <div style={{ 
-        backgroundColor: '#fff0f5', 
-        padding: '40px', 
-        borderRadius: '20px', 
-        textAlign: 'center', 
-        width: '450px', 
-        maxWidth: '90%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-        position: 'relative'
-      }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 99999 }}>
+      <div style={{ backgroundColor: '#fff0f5', padding: '40px', borderRadius: '20px', textAlign: 'center', width: '450px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', position: 'relative' }}>
         
         {/* Botão Fechar */}
-        <span 
-          onClick={onClose}
-          style={{ 
-            position: 'absolute', 
-            top: '15px', 
-            right: '20px', 
-            color: '#ff3b3b', 
-            fontSize: '1.5rem', 
-            fontWeight: 'bold', 
-            cursor: 'pointer',
-            zIndex: 1
-          }}
-        >
-          ✕
-        </span>
+        <span onClick={onClose} style={{ position: 'absolute', top: '15px', right: '20px', color: '#ff3b3b', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer', zIndex: 1 }} > ✕ </span>
 
-        <h3 style={{ 
-          color: '#ff3333', 
-          margin: '0 0 30px 0', 
-          fontSize: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px'
-        }}>
+        <h3 style={{ color: '#ff3333', margin: '0 0 30px 0', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
           <span>❖</span> Pagamento PIX
         </h3>
         
@@ -192,41 +147,18 @@ function ModalPix({
         {/* ESTADO: AGUARDANDO PARA GERAR */}
         {!loading && statusPagamento === 'aguardando' && (
           <div>
-            <div style={{ 
-              width: '200px', 
-              height: '200px', 
-              margin: '0 auto 20px auto',
-              backgroundColor: '#ffeef5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '10px',
-              border: '2px dashed #ccc'
-            }}>
+            <div style={{ width: '200px', height: '200px', margin: '0 auto 20px auto', backgroundColor: '#ffeef5', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '2px dashed #ccc' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem' }}>📱</div>
                 <p style={{ color: '#999', fontSize: '0.9rem' }}>QR Code PIX</p>
               </div>
             </div>
 
-            <p style={{ marginBottom: '20px', color: '#666' }}>
-              Clique no botão abaixo para gerar o QR Code do PIX
-            </p>
+            <p style={{ marginBottom: '20px', color: '#666' }}> Clique no botão abaixo para gerar o QR Code do PIX </p>
 
             <button 
               onClick={gerarPix}
-              style={{ 
-                padding: '15px 30px', 
-                backgroundColor: '#ff3333', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '10px', 
-                fontWeight: 'bold', 
-                cursor: 'pointer', 
-                width: '100%',
-                fontSize: '1.1rem',
-                transition: 'background-color 0.2s'
-              }}
+              style={{ padding: '15px 30px', backgroundColor: '#ff3333', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', width: '100%', fontSize: '1.1rem', transition: 'background-color 0.2s' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d11616'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#aa1f1f'}
             >
@@ -238,29 +170,10 @@ function ModalPix({
         {/* ESTADO: QR CODE GERADO */}
         {!loading && statusPagamento === 'sucesso' && (
           <div>
-            <p style={{ 
-              marginBottom: '15px', 
-              fontWeight: 'bold', 
-              color: '#333',
-              fontSize: '1.1rem'
-            }}>
-              Escaneie o QR Code abaixo
-            </p>
+            <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#333', fontSize: '1.1rem' }}> Escaneie o QR Code abaixo </p>
             
             {/* QR Code */}
-            <div style={{ 
-                width: '250px', 
-                height: '250px', 
-                margin: '0 auto 20px auto',
-                backgroundColor: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '10px',
-                border: '2px solid #ff3333',
-                overflow: 'hidden',
-                padding: '10px'
-                }}>
+            <div style={{ width: '250px', height: '250px', margin: '0 auto 20px auto', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '2px solid #ff3333', overflow: 'hidden', padding: '10px' }}>
                 {pixCode ? (
                     <QRCodeSVG 
                     value={pixCode} 
@@ -275,74 +188,16 @@ function ModalPix({
             {/* Código Copia e Cola */}
             {pixCode && (
               <div style={{ marginTop: '20px', textAlign: 'left' }}>
-                <p style={{ 
-                  fontWeight: 'bold', 
-                  marginBottom: '10px',
-                  color: '#333'
-                }}>
-                  Ou copie o código PIX:
-                </p>
-                <div style={{ 
-                  backgroundColor: '#f5f5f5', 
-                  padding: '15px', 
-                  borderRadius: '8px',
-                  wordBreak: 'break-all',
-                  fontSize: '0.8rem',
-                  marginBottom: '15px',
-                  border: '1px solid #e0e0e0',
-                  fontFamily: 'monospace'
-                }}>
-                  {pixCode}
-                </div>
-                <button 
-                  onClick={copiarCodigoPix}
-                  style={{ 
-                    backgroundColor: '#ff3333', 
-                    color: '#fff', 
-                    border: 'none', 
-                    padding: '10px 20px', 
-                    borderRadius: '8px', 
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    width: '100%'
-                  }}
-                >
-                  Copiar Código PIX
-                </button>
+                <p style={{ fontWeight: 'bold', marginBottom: '10px', color: '#333' }}> Ou copie o código PIX: </p>
+                <div style={{ backgroundColor: '#f5f5f5', padding: '15px', borderRadius: '8px', wordBreak: 'break-all', fontSize: '0.8rem', marginBottom: '15px', border: '1px solid #e0e0e0', fontFamily: 'monospace' }}> {pixCode} </div>
+                <button onClick={copiarCodigoPix} style={{ backgroundColor: '#ff3333', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }} > Copiar Código PIX </button>
               </div>
             )}
 
-            <div style={{ 
-              marginTop: '20px', 
-              padding: '15px', 
-              backgroundColor: '#f0fdf9', 
-              borderRadius: '8px',
-              border: '1px solid #20b2aa33'
-            }}>
-              <p style={{ 
-                color: '#666', 
-                fontSize: '0.9rem', 
-                marginBottom: '15px' 
-              }}>
-                Após o pagamento, clique no botão abaixo para verificar
-              </p>
+            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0fdf9', borderRadius: '8px', border: '1px solid #20b2aa33' }}>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}> Após o pagamento, clique no botão abaixo para verificar </p>
 
-              <button 
-                onClick={verificarPagamento}
-                style={{ 
-                  padding: '12px 30px', 
-                  backgroundColor: '#d11616', 
-                  color: '#fff', 
-                  border: 'none', 
-                  borderRadius: '8px', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer', 
-                  width: '100%',
-                  fontSize: '1rem'
-                }}
-              >
-                Já paguei, verificar
-              </button>
+              <button onClick={verificarPagamento} style={{ padding: '12px 30px', backgroundColor: '#d11616', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%', fontSize: '1rem' }} > Já paguei, verificar </button>
             </div>
           </div>
         )}
@@ -351,50 +206,13 @@ function ModalPix({
         {!loading && statusPagamento === 'erro' && (
           <div>
             <img src={imgFormigaTriste} alt="Erro" style={{ width: '220px', marginBottom: '20px' }} />
-            <p style={{ 
-              color: '#ff3b3b', 
-              fontWeight: 'bold', 
-              marginBottom: '20px',
-              fontSize: '1.1rem'
-            }}>
-              OPS! Algo deu errado ao gerar o QR Code
-            </p>
-            <button 
-              onClick={gerarPix}
-              style={{ 
-                padding: '12px 30px', 
-                backgroundColor: '#ff3b3b', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '8px', 
-                fontWeight: 'bold', 
-                cursor: 'pointer', 
-                width: '100%',
-                marginBottom: '10px'
-              }}
-            >
-              Tentar novamente
-            </button>
+            <p style={{ color: '#ff3b3b', fontWeight: 'bold', marginBottom: '20px', fontSize: '1.1rem' }}> OPS! Algo deu errado ao gerar o QR Code </p>
+            <button onClick={gerarPix} style={{ padding: '12px 30px', backgroundColor: '#ff3b3b', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '10px' }} > Tentar novamente </button>
           </div>
         )}
 
         {/* Botão Cancelar */}
-        <button 
-          onClick={onClose}
-          style={{ 
-            padding: '10px', 
-            backgroundColor: '#f5f5f5', 
-            color: '#666', 
-            border: 'none', 
-            borderRadius: '8px', 
-            cursor: 'pointer', 
-            width: '100%',
-            marginTop: '15px',
-            fontWeight: 'bold'
-          }}
-        >
-          Cancelar
-        </button>
+        <button onClick={onClose} style={{ padding: '10px', backgroundColor: '#f5f5f5', color: '#666', border: 'none', borderRadius: '8px', cursor: 'pointer', width: '100%', marginTop: '15px', fontWeight: 'bold' }} > Cancelar </button>
       </div>
     </div>
   );

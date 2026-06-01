@@ -1,0 +1,9 @@
+{
+  "printWidth": 500,
+  "singleAttributePerLine": false,
+  "bracketSameLine": true,
+  "htmlWhitespaceSensitivity": "ignore",
+  "proseWrap": "never",
+  "arrowParens": "avoid",
+  "embeddedLanguageFormatting": "off"
+}

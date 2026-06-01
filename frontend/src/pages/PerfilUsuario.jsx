@@ -179,12 +179,11 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
       });
 
       if (response.ok) {
-        // Limpa dados do localStorage
+
         localStorage.removeItem('access_token');
         localStorage.removeItem('usuario_id');
         localStorage.removeItem('usuario');
-        
-        // Redireciona para a tela de login
+
         if (setTelaAtual) {
           setTelaAtual('login');
         }
@@ -219,25 +218,10 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
 
   return (
     <>
-      <div style={{
-        backgroundColor: '#fdf2f5',
-        fontFamily: 'sans-serif',
-        padding: '24px',
-        maxWidth: '600px',
-        margin: '0 auto',
-        position: 'relative'
-      }}>
+      <div style={{ backgroundColor: '#fdf2f5', fontFamily: 'sans-serif', padding: '24px', maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
         
         {/* CABEÇALHO */}
-        <header style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '32px',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
+        <header style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{
               fontSize: '2rem',
@@ -255,57 +239,11 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
           {/* BOTÕES DE AÇÃO */}
           <div style={{ display: 'flex', gap: '8px' }}>
             {!modoEdicao ? (
-              <button
-                onClick={() => setModoEdicao(true)}
-                style={{
-                  backgroundColor: '#ff5d8f',
-                  color: '#fff',
-                  padding: '10px 24px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  boxShadow: '0 2px 4px rgba(255,93,143,0.3)',
-                  transition: 'all 0.2s'
-                }}
-              >
-                ✏️ Editar Perfil
-              </button>
+              <button onClick={() => setModoEdicao(true)} style={{ backgroundColor: '#ff5d8f', color: '#fff', padding: '10px 24px', borderRadius: '12px', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 2px 4px rgba(255,93,143,0.3)', transition: 'all 0.2s' }} > ✏️ Editar Perfil </button>
             ) : (
               <>
-                <button
-                  onClick={handleCancelar}
-                  style={{
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    padding: '10px 24px',
-                    borderRadius: '12px',
-                    fontWeight: '600',
-                    border: '1px solid #e5e7eb',
-                    cursor: 'pointer',
-                    fontSize: '0.95rem',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSalvar}
-                  disabled={salvando}
-                  style={{
-                    backgroundColor: salvando ? '#f9a8d4' : '#ff5d8f',
-                    color: '#fff',
-                    padding: '10px 24px',
-                    borderRadius: '12px',
-                    fontWeight: '600',
-                    border: 'none',
-                    cursor: salvando ? 'not-allowed' : 'pointer',
-                    fontSize: '0.95rem',
-                    boxShadow: '0 2px 4px rgba(255,93,143,0.3)',
-                    transition: 'all 0.2s'
-                  }}
-                >
+                <button onClick={handleCancelar} style={{ backgroundColor: '#f3f4f6', color: '#374151', padding: '10px 24px', borderRadius: '12px', fontWeight: '600', border: '1px solid #e5e7eb', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s' }} > Cancelar </button>
+                <button onClick={handleSalvar} disabled={salvando} style={{ backgroundColor: salvando ? '#f9a8d4' : '#ff5d8f', color: '#fff', padding: '10px 24px', borderRadius: '12px', fontWeight: '600', border: 'none', cursor: salvando ? 'not-allowed' : 'pointer', fontSize: '0.95rem', boxShadow: '0 2px 4px rgba(255,93,143,0.3)', transition: 'all 0.2s' }} >
                   {salvando ? '⏳ Salvando...' : '💾 Salvar'}
                 </button>
               </>
@@ -337,58 +275,20 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
         )}
 
         {loading ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px',
-            color: '#ff5d8f',
-            fontSize: '1.2rem'
-          }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#ff5d8f', fontSize: '1.2rem' }}>
             <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🐜</div>
             Carregando perfil...
           </div>
         ) : (
           <>
             {/* CARDS DE INFORMAÇÕES */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px'
-            }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
               {/* NOME */}
-              <div style={{
-                backgroundColor: '#fff',
-                padding: '24px',
-                borderRadius: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #fce7f3',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#fce7f3',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  👤
-                </div>
+              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fce7f3', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#fce7f3', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}> 👤 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    fontWeight: '500',
-                    display: 'block',
-                    marginBottom: '8px'
-                  }}>
-                    Nome completo
-                  </label>
+                  <label style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', display: 'block', marginBottom: '8px' }}> Nome completo </label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -396,16 +296,7 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
                       value={dadosUsuario.nome}
                       onChange={handleInputChange}
                       placeholder="Seu nome completo"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #fce7f3',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        transition: 'border-color 0.2s',
-                        color: '#1f2937'
-                      }}
+                      style={{ width: '100%', padding: '12px', border: '2px solid #fce7f3', borderRadius: '12px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', color: '#1f2937' }}
                       onFocus={(e) => e.target.style.borderColor = '#ff5d8f'}
                       onBlur={(e) => e.target.style.borderColor = '#fce7f3'}
                     />
@@ -423,60 +314,13 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               </div>
 
               {/* EMAIL */}
-              <div style={{
-                backgroundColor: '#fff',
-                padding: '24px',
-                borderRadius: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #fce7f3',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#dbeafe',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  📧
-                </div>
+              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fce7f3', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#dbeafe', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}> 📧 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    fontWeight: '500',
-                    display: 'block',
-                    marginBottom: '8px'
-                  }}>
-                    E-mail
-                  </label>
-                  <p style={{ 
-                    fontSize: '1.125rem', 
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    margin: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    flexWrap: 'wrap'
-                  }}>
+                  <label style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', display: 'block', marginBottom: '8px' }}> E-mail </label>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1f2937', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {dadosUsuario.email}
-                    <span style={{
-                      fontSize: '0.75rem',
-                      backgroundColor: '#d1fae5',
-                      color: '#065f46',
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                      fontWeight: 'bold'
-                    }}>
-                      ✓ Verificado
-                    </span>
+                    <span style={{ fontSize: '0.75rem', backgroundColor: '#d1fae5', color: '#065f46', padding: '2px 8px', borderRadius: '9999px', fontWeight: 'bold' }}> ✓ Verificado </span>
                   </p>
                   <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '4px 0 0 0' }}>
                     O e-mail não pode ser alterado
@@ -485,39 +329,10 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               </div>
 
               {/* CPF */}
-              <div style={{
-                backgroundColor: '#fff',
-                padding: '24px',
-                borderRadius: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #fce7f3',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#ffedd5',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  🪪
-                </div>
+              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fce7f3', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#ffedd5', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}> 🪪 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    fontWeight: '500',
-                    display: 'block',
-                    marginBottom: '8px'
-                  }}>
-                    CPF
-                  </label>
+                  <label style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', display: 'block', marginBottom: '8px' }}> CPF </label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -526,16 +341,7 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
                       onChange={handleInputChange}
                       placeholder="000.000.000-00"
                       maxLength="14"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #fce7f3',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        transition: 'border-color 0.2s',
-                        color: '#1f2937'
-                      }}
+                      style={{ width: '100%', padding: '12px', border: '2px solid #fce7f3', borderRadius: '12px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', color: '#1f2937' }}
                       onFocus={(e) => e.target.style.borderColor = '#ff5d8f'}
                       onBlur={(e) => e.target.style.borderColor = '#fce7f3'}
                     />
@@ -553,39 +359,10 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               </div>
 
               {/* TELEFONE */}
-              <div style={{
-                backgroundColor: '#fff',
-                padding: '24px',
-                borderRadius: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #fce7f3',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#d1fae5',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  📱
-                </div>
+              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fce7f3', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#d1fae5', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}> 📱 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    fontWeight: '500',
-                    display: 'block',
-                    marginBottom: '8px'
-                  }}>
-                    Telefone
-                  </label>
+                  <label style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500', display: 'block', marginBottom: '8px' }}> Telefone </label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -594,16 +371,7 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
                       onChange={handleInputChange}
                       placeholder="(00) 00000-0000"
                       maxLength="15"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #fce7f3',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        transition: 'border-color 0.2s',
-                        color: '#1f2937'
-                      }}
+                      style={{ width: '100%', padding: '12px', border: '2px solid #fce7f3', borderRadius: '12px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', color: '#1f2937' }}
                       onFocus={(e) => e.target.style.borderColor = '#ff5d8f'}
                       onBlur={(e) => e.target.style.borderColor = '#fce7f3'}
                     />
@@ -621,29 +389,8 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               </div>
 
               {/* DATA DE NASCIMENTO */}
-              <div style={{
-                backgroundColor: '#fff',
-                padding: '24px',
-                borderRadius: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #fce7f3',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#f3e8ff',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  flexShrink: 0
-                }}>
-                  🎂
-                </div>
+              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fce7f3', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#f3e8ff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}> 🎂 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ 
                     fontSize: '0.875rem', 
@@ -660,17 +407,7 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
                       name="data_nascimento"
                       value={formatarDataInput(dadosUsuario.data_nascimento)}
                       onChange={handleInputChange}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #fce7f3',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        transition: 'border-color 0.2s',
-                        color: '#1f2937',
-                        cursor: 'pointer'
-                      }}
+                      style={{ width: '100%', padding: '12px', border: '2px solid #fce7f3', borderRadius: '12px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', color: '#1f2937', cursor: 'pointer' }}
                       onFocus={(e) => e.target.style.borderColor = '#ff5d8f'}
                       onBlur={(e) => e.target.style.borderColor = '#fce7f3'}
                     />
@@ -690,32 +427,10 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
             </div>
 
             {/* BOTÕES DE AÇÃO INFERIORES */}
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              marginTop: '32px',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '32px', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
               {/* BOTÃO EXCLUIR CONTA */}
               {!modoEdicao && (
-                <button
-                  onClick={() => setMostrarConfirmacao(true)}
-                  style={{
-                    backgroundColor: '#fff',
-                    color: '#dc2626',
-                    padding: '12px 24px',
-                    borderRadius: '16px',
-                    fontWeight: '600',
-                    border: '2px solid #fecaca',
-                    cursor: 'pointer',
-                    fontSize: '0.95rem',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
+                <button onClick={() => setMostrarConfirmacao(true)} style={{ backgroundColor: '#fff', color: '#dc2626', padding: '12px 24px', borderRadius: '16px', fontWeight: '600', border: '2px solid #fecaca', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#fef2f2';
                     e.target.style.borderColor = '#dc2626';
@@ -732,38 +447,8 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               {/* BOTÕES DE EDIÇÃO */}
               {modoEdicao && (
                 <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
-                  <button
-                    onClick={handleCancelar}
-                    style={{
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      padding: '12px 32px',
-                      borderRadius: '16px',
-                      fontWeight: '600',
-                      border: '1px solid #e5e7eb',
-                      cursor: 'pointer',
-                      fontSize: '1rem',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSalvar}
-                    disabled={salvando}
-                    style={{
-                      backgroundColor: salvando ? '#f9a8d4' : '#ff5d8f',
-                      color: '#fff',
-                      padding: '12px 32px',
-                      borderRadius: '16px',
-                      fontWeight: '600',
-                      border: 'none',
-                      cursor: salvando ? 'not-allowed' : 'pointer',
-                      fontSize: '1rem',
-                      boxShadow: '0 4px 6px rgba(255,93,143,0.3)',
-                      transition: 'all 0.2s'
-                    }}
-                  >
+                  <button onClick={handleCancelar} style={{ backgroundColor: '#f3f4f6', color: '#374151', padding: '12px 32px', borderRadius: '16px', fontWeight: '600', border: '1px solid #e5e7eb', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }} > Cancelar </button>
+                  <button onClick={handleSalvar} disabled={salvando} style={{ backgroundColor: salvando ? '#f9a8d4' : '#ff5d8f', color: '#fff', padding: '12px 32px', borderRadius: '16px', fontWeight: '600', border: 'none', cursor: salvando ? 'not-allowed' : 'pointer', fontSize: '1rem', boxShadow: '0 4px 6px rgba(255,93,143,0.3)', transition: 'all 0.2s' }} >
                     {salvando ? '⏳ Salvando alterações...' : '💾 Salvar alterações'}
                   </button>
                 </div>
@@ -775,66 +460,16 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {mostrarConfirmacao && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '24px',
-            padding: '32px',
-            maxWidth: '500px',
-            width: '100%',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            animation: 'slideDown 0.3s ease-out'
-          }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '32px', maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'slideDown 0.3s ease-out' }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                backgroundColor: '#fee2e2',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px auto',
-                fontSize: '2.5rem'
-              }}>
-                ⚠️
-              </div>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#1f2937',
-                margin: '0 0 8px 0'
-              }}>
-                Excluir sua conta?
-              </h2>
-              <p style={{
-                color: '#6b7280',
-                margin: 0,
-                lineHeight: '1.6',
-                fontSize: '0.95rem'
-              }}>
+              <div style={{ width: '80px', height: '80px', backgroundColor: '#fee2e2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', fontSize: '2.5rem' }}> ⚠️ </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: '0 0 8px 0' }}> Excluir sua conta? </h2>
+              <p style={{ color: '#6b7280', margin: 0, lineHeight: '1.6', fontSize: '0.95rem' }}>
                 Esta ação é <strong style={{ color: '#dc2626' }}>irreversível</strong>! 
                 Todos os seus dados serão permanentemente removidos, incluindo:
               </p>
-              <ul style={{
-                textAlign: 'left',
-                color: '#6b7280',
-                margin: '16px 0 0 0',
-                paddingLeft: '24px',
-                fontSize: '0.9rem'
-              }}>
+              <ul style={{ textAlign: 'left', color: '#6b7280', margin: '16px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem' }}>
                 <li>Dados do perfil</li>
                 <li>Histórico de pedidos</li>
                 <li>Endereços salvos</li>
@@ -842,67 +477,17 @@ const PerfilUsuario = ({ onClose, setTelaAtual }) => {
               </ul>
             </div>
 
-            <div style={{
-              backgroundColor: '#fff7ed',
-              border: '1px solid #fed7aa',
-              borderRadius: '12px',
-              padding: '12px 16px',
-              marginBottom: '24px',
-              display: 'flex',
-              gap: '12px',
-              alignItems: 'flex-start'
-            }}>
+            <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '12px', padding: '12px 16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.25rem' }}>💡</span>
-              <p style={{
-                margin: 0,
-                fontSize: '0.875rem',
-                color: '#9a3412',
-                lineHeight: '1.5'
-              }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: '#9a3412', lineHeight: '1.5' }}>
                 Você pode simplesmente parar de usar sua conta sem excluí-la. 
                 Seus dados ficarão seguros para quando quiser voltar.
               </p>
             </div>
 
-            <div style={{
-              display: 'flex',
-              gap: '12px'
-            }}>
-              <button
-                onClick={() => setMostrarConfirmacao(false)}
-                disabled={excluindo}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  padding: '14px 24px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  border: '1px solid #e5e7eb',
-                  cursor: excluindo ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleExcluirConta}
-                disabled={excluindo}
-                style={{
-                  flex: 1,
-                  backgroundColor: excluindo ? '#fca5a5' : '#dc2626',
-                  color: '#fff',
-                  padding: '14px 24px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: excluindo ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 4px 6px rgba(220, 38, 38, 0.2)'
-                }}
-              >
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setMostrarConfirmacao(false)} disabled={excluindo} style={{ flex: 1, backgroundColor: '#f3f4f6', color: '#374151', padding: '14px 24px', borderRadius: '12px', fontWeight: '600', border: '1px solid #e5e7eb', cursor: excluindo ? 'not-allowed' : 'pointer', fontSize: '1rem', transition: 'all 0.2s' }} > Cancelar </button>
+              <button onClick={handleExcluirConta} disabled={excluindo} style={{ flex: 1, backgroundColor: excluindo ? '#fca5a5' : '#dc2626', color: '#fff', padding: '14px 24px', borderRadius: '12px', fontWeight: '600', border: 'none', cursor: excluindo ? 'not-allowed' : 'pointer', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(220, 38, 38, 0.2)' }} >
                 {excluindo ? '⏳ Excluindo...' : '🗑️ Sim, excluir minha conta'}
               </button>
             </div>

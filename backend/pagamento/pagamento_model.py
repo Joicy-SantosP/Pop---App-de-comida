@@ -21,6 +21,7 @@ class Pagamento(db.Model):
     
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Verifica se o pagamento excedeu o tempo limite de 10 minutos
     def esta_expirado(self):
         limite = self.data_criacao + timedelta(minutes=10)
         return datetime.utcnow() > limite
@@ -34,7 +35,7 @@ class Pagamento(db.Model):
         self.taxa_entrega = float(taxa_entrega) if taxa_entrega is not None else 0.0
         self.total_final = self.subtotal + self.taxa_entrega
 
-    
+    # Valida os dados do pagamento conferindo subtotal, total e método aceito
     def validar_pagamento(self, pedido_no_banco):
         
         if not pedido_no_banco:
@@ -54,6 +55,7 @@ class Pagamento(db.Model):
         
         return True, "Dados válidos.Pronto para processar o pagamento."
     
+# Calcula a distância em quilômetros entre duas coordenadas geográficas usando a fórmula de Haversine
 def calcular_distancia_km(lat1,lon1,lat2,lon2):
     R = 6371.0
         

@@ -9,6 +9,8 @@ class Entregador(db.Model):
     email = db.Column(db.String(100), nullable=False)
     telefone = db.Column(db.String(11), nullable=False) 
     veiculo = db.Column(db.String(900), nullable=False)
+    cnh = db.Column(db.String(20), nullable=False)        # 🆕
+    placa = db.Column(db.String(10), nullable=False)       # 🆕
     foto = db.Column(db.String(500), nullable=True)
     status = db.Column(db.String(100), default='Indisponível')
     
@@ -19,15 +21,16 @@ class Entregador(db.Model):
     login_token = db.Column(db.String(6), nullable=True)
     login_token_expiration = db.Column(db.DateTime, nullable=True)
     
-
     disponivel = db.Column(db.Boolean, default=True)
     
-    def __init__(self, nome, cpf, email, telefone, veiculo, status, foto=None):
+    def __init__(self, nome, cpf, email, telefone, veiculo, cnh, placa, status, foto=None):
         self.nome = nome
         self.cpf = cpf
         self.email = email
         self.telefone = telefone
         self.veiculo = veiculo
+        self.cnh = cnh              
+        self.placa = placa          
         self.status = status
         self.foto = foto
         self.disponivel = True
@@ -40,6 +43,8 @@ class Entregador(db.Model):
             'email': self.email,
             'telefone': self.telefone,
             'veiculo': self.veiculo,
+            'cnh': self.cnh,              
+            'placa': self.placa,          
             'status': self.status,
             'foto': self.foto,
             'disponivel': self.disponivel,

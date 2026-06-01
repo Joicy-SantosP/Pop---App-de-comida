@@ -89,6 +89,7 @@ def buscar_produto():
 
     return [p.to_dict() for p in produtos], 200
 
+#Remove permanentemente um produto do banco de dados
 @produto_bp.route('/<int:id>', methods=['DELETE'])
 def deletar_produto(id):
     produto = Produto.query.get_or_404(id)
