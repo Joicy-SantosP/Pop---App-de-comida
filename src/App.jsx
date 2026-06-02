@@ -27,8 +27,15 @@ import imgMenina4 from './assets/iconeMenina4.jpg';
 import imgEntregador from './assets/Imagem entregador.png';
 import imgCriancas from './assets/imagem crianças.png';
 
+import cartaoInicio1 from './assets/cartaoinicio1.png';
+import cartaoInicio2 from './assets/cartaoinicio2.png';
+import banerinicio from './assets/banerinicio.png'; 
+import banerinicio3 from './assets/banerinicio3.png';
+import banerinicio4 from './assets/banerinicio4.png';
+
 import bannerCumprido3 from './assets/Poster Cumprido 3.png';
 import bannerCumprido4 from './assets/Poster Cumprido 4.png';
+
 
 
 // --- Integração com API URL do backend ---
