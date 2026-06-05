@@ -36,6 +36,7 @@ import imgFormigaComendo from "../assets/formiguinha comendo .png";
 import imgFormigaFeliz from "../assets/formigafeliz.png";
 import imgFormigaPensativa from "../assets/formigapensativa.png";
 import imgFormigaTriste from "../assets/formigatriste.png";
+import furmigalocalização from "../assets/furmigalocalização.png";
 
 // IMPORTS - Componentes
 import ModalPix from "../pages/ModalPix";
@@ -1235,7 +1236,7 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
 
             {/* Mascote no Topo */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px", }}>
-              <img src={imgFormigaDormindo} alt="Mascote Localização" style={{ height: "80px" }} />
+              <img src={furmigalocalização} alt="Mascote Localização" style={{ height: "80px" }} />
             </div>
 
             {/* --- PASSO 1: BUSCAR ENDEREÇO --- */}

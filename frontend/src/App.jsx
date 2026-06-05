@@ -30,6 +30,19 @@ import imgCriancas from "./assets/imagem crianças.png";
 import bannerCumprido3 from "./assets/Poster Cumprido 3.png";
 import bannerCumprido4 from "./assets/Poster Cumprido 4.png";
 
+import cartaoinicio1 from "./assets/cartaoinicio1.png";
+import cartaoinicio2 from "./assets/cartaoinicio2.png";
+
+import banerinicio1 from "./assets/banerinicio1.png";
+import banerinicio2 from "./assets/banerinicio2.png";
+import banerinicio3 from "./assets/banerinicio3.png";
+
+import teladefundologin from './assets/teladefundologin.png';
+import kidscandy from './assets/kidscandy.png';
+
+import TeladeFundoCadastro from './assets/TeladeFundoCadastro.png';
+import formiguinhabala from './assets/formiguinhabala.png';
+
 // --- Integração com API URL do backend ---
 const API_URL = "http://localhost:5000";
 
@@ -643,24 +656,20 @@ function App() {
           <main className="conteudo-principal">
             <h2 className="titulo-central">Todas suas sobremesas favoritas você encontra aqui</h2>
             <div className="area-cartoes">
-              <div className="cartao cartao-lojas">
-                <div className="conteudo-texto">
-                  <h3>Lojas</h3>
-                  <button className="btn-opcoes">Ver Opções &gt;</button>
-                </div>
-                <img src={imgBolo} alt="Bolo maravilhoso" className="img-bolo" />
-              </div>
-              <div className="cartao cartao-festa">
-                <img src={imgBandeirolas} alt="Bandeirolas" className="img-bandeirolas" />
-                <h3 className="texto-festa">Organizando uma festa ?</h3>
-                <button className="btn-orcamento">
-                  Faça seu orçamento
-                  <br />
-                  com lojas próximas aqui
-                </button>
-                <img src={imgBaloes} alt="Balões" className="img-baloes" />
-              </div>
-            </div>
+        {/* Novo Cartão 1: Lojas */}
+        <img 
+          src={cartaoinicio1} 
+          alt="Lojas" 
+          className="cartao-imagem"
+          style={{ cursor: 'pointer', maxWidth: '450px', width: '100%', borderRadius: '20px' }}/>
+
+        {/* Novo Cartão 2: Cupons */}
+        <img 
+          src={cartaoinicio2} 
+          alt="Cupons Super Sale" 
+          className="cartao-imagem"
+          style={{ cursor: 'pointer', maxWidth: '450px', width: '100%', borderRadius: '20px' }}/>
+          </div>
           </main>
 
           <div className="area-pesquisa">
@@ -709,29 +718,29 @@ function App() {
               </div>
             </section>
 
-            <section className="secao-nova secao-banners">
-              <div className="banner banner-rosa-claro">
-                <div className="texto-banner">
-                  <h2>DOCES</h2>
-                  <p>a partir de</p>
-                  <h3>R$10,00</h3>
-                </div>
-                <img src={imgBolo} alt="Bolo" className="img-banner-direita" />
-              </div>
-              <div className="banner banner-rosa-escuro">
-                <div className="texto-banner centralizado">
-                  <h2>CUPONS</h2>
-                  <p>de até</p>
-                  <h3 className="texto-gigante">30%</h3>
-                </div>
-              </div>
-              <div className="banner banner-rosa-claro horizontal">
-                <img src={imgBoloChocolate} alt="Bolo de Chocolate" className="img-banner-esquerda" />
-                <div className="texto-banner text-right">
-                  <p>super ⭐⭐⭐⭐⭐</p>
-                  <h3 style={{ color: "#d94141" }}>Restaurantes</h3>
-                </div>
-              </div>
+            <section className="secao-nova secao-banners" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              
+              {/* Banner 1: Doces */}
+              <img 
+                src={banerinicio1} 
+                alt="Doces a partir de R$10,00" 
+                style={{ width: '350px', height: '200px', objectFit: 'cover', borderRadius: '25px', cursor: 'pointer' }} 
+              />
+
+              {/* Banner 2: Cupons */}
+              <img 
+                src={banerinicio2} 
+                alt="Cupons de até 30%" 
+                style={{ width: '350px', height: '200px', objectFit: 'cover', borderRadius: '25px', cursor: 'pointer' }} 
+              />
+
+              {/* Banner 3: Restaurantes */}
+              <img 
+                src={banerinicio3} 
+                alt="Restaurantes 5 estrelas" 
+                style={{ width: '350px', height: '200px', objectFit: 'cover', borderRadius: '25px', cursor: 'pointer' }} 
+              />
+
             </section>
 
             <hr className="linha-divisoria" />
@@ -924,7 +933,14 @@ function App() {
 
       {/* TELA DE LOGIN */}
       {telaAtual === "login" && (
-        <div style={{ backgroundColor: "#ffe6e8", minHeight: "100vh", padding: "20px 40px", fontFamily: "sans-serif" }}>
+        <div style={{ 
+          backgroundImage: `url(${teladefundologin})`, /* <-- MUDANÇA: Fundo de imagem aplicado aqui */
+          backgroundSize: "cover", 
+          backgroundPosition: "center", 
+          minHeight: "100vh", 
+          padding: "20px 40px", 
+          fontFamily: "sans-serif" 
+        }}>
           {/* HEADER: Logo POP! e Botões do topo */}
           <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px" }}>
             {/* Logo */}
@@ -935,7 +951,8 @@ function App() {
           <main style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "50px", flexWrap: "wrap" }}>
             {/* LADO ESQUERDO - Ilustração Crianças */}
             <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", minWidth: "350px" }}>
-              <img src={imgCriancas} alt="Crianças com doces" style={{ maxWidth: "500px", width: "100%", objectFit: "contain" }} />
+              {/* <-- MUDANÇA: Imagem nova das crianças aplicada aqui */}
+              <img src={kidscandy} alt="Crianças com doces" style={{ maxWidth: "500px", width: "100%", objectFit: "contain" }} />
             </div>
 
             {/* LADO DIREITO - Cartão Branco com o seu form */}
@@ -1054,7 +1071,14 @@ function App() {
 
       {/* TELA DE TOKEN LOGIN */}
       {telaAtual === "token-login" && (
-        <div style={{ backgroundColor: "#ffe6e8", minHeight: "100vh", padding: "20px 40px", fontFamily: "sans-serif" }}>
+        <div style={{ 
+          backgroundImage: `url(${TeladeFundoCadastro})`, /* <-- MUDANÇA 1: Fundo aplicado aqui */
+          backgroundSize: "cover", 
+          backgroundPosition: "center", 
+          minHeight: "100vh", 
+          padding: "20px 40px", 
+          fontFamily: "sans-serif" 
+        }}>
           {/* HEADER: Logo POP! e Botões do topo */}
           <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px" }}>
             <img src={imgLogo} alt="POP!" style={{ height: "70px", objectFit: "contain", cursor: "pointer" }} onClick={() => setTelaAtual("dashboard")} />
@@ -1062,9 +1086,10 @@ function App() {
 
           {/* CONTEÚDO: Imagem Esquerda + Formulário Direita */}
           <main style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "50px", flexWrap: "wrap" }}>
-            {/* LADO ESQUERDO - Ilustração Entregador */}
+            {/* LADO ESQUERDO - Ilustração Formiguinha */}
             <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", minWidth: "350px" }}>
-              <img src={imgEntregador} alt="Entregador POP" style={{ maxWidth: "400px", width: "100%", objectFit: "contain" }} />
+              {/* <-- MUDANÇA 2: A formiguinha bala entrou aqui no lugar do entregador */}
+              <img src={formiguinhabala} alt="Formiguinha com Bala" style={{ maxWidth: "400px", width: "100%", objectFit: "contain" }} />
             </div>
 
             {/* LADO DIREITO - Cartão Branco com o Token */}
@@ -1074,7 +1099,7 @@ function App() {
 
                 <h3 className="titulo-form" style={{ textAlign: "center", marginBottom: "40px", fontSize: "1.2rem", color: "#000", fontWeight: "bold" }}> para o seu email </h3>
 
-                {/* Campos do Token (Comentados, já com a lógica do state codigoLogin e layout novo) */}
+                {/* Campos do Token */}
                 <div className="linha-token" style={{ display: "flex", justifyContent: "center", gap: "15px", marginBottom: "40px" }}>
                   {[0, 1, 2, 3, 4, 5].map(i => (
                     <input key={i} type="text" maxLength="1" className="input-token" value={codigoLogin[i]} style={{ width: "50px", height: "50px", textAlign: "center", fontSize: "1.5rem", borderRadius: "8px", border: "2px solid #000", outline: "none", fontWeight: "bold", backgroundColor: "#fff", }}
