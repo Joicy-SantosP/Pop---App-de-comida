@@ -8,6 +8,7 @@ import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+
 let DefaultIcon = L.icon({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
@@ -45,6 +46,8 @@ import ModalConfirmacaoRetirada from "../pages/ModalConfirmacaoRetirada";
 import ModalPainelSenhas from "../pages/ModalPainelSenhas";
 import Relatorio from "../pages/Relatorio";
 import PerfilUsuario from "../pages/PerfilUsuario";
+import ModalAjuda from "../pages/ModalAjuda";
+import ModalEnderecos from '../pages/ModalEnderecos';
 
 // COMPONENTE: AreaLogada
 function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuarioAberto, carrinhoAberto, setCarrinhoAberto, itensCarrinho, setItensCarrinho, modalEnderecoAberto, setModalEnderecoAberto, setPassoEndereco, lojaSelecionada, setLojaSelecionada, lojas, produtoSelecionado, setProdutoSelecionado, quantidadeProduto, setQuantidadeProduto, passoEndereco, tipoFavorito, setTipoFavorito, usuarioNome, setUsuarioNome }) {
@@ -82,6 +85,11 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
   const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
   const debounceTimer = useRef(null);
   const imgPlaceholder = "https://via.placeholder.com/150";
+  const [modalAjudaAberto, setModalAjudaAberto] = useState(false);
+  const [modalEnderecosAberto, setModalEnderecosAberto] = useState(false);
+  const [termoBusca, setTermoBusca] = useState('');
+  const [resultadosBusca, setResultadosBusca] = useState([]);
+  const [mostrandoResultados, setMostrandoResultados] = useState(false);
 
   // Estados com valores iniciais compostos
   const [dadosEntrega, setDadosEntrega] = useState({
@@ -115,6 +123,21 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
       setProdutos(dados);
     } catch (erro) {
       console.error("ERRO AO BUSCAR PRODUTOS:", erro);
+    }
+  };
+
+  const buscarProdutos = async (termo) => {
+    if (!termo.trim()) { setResultadosBusca([]); return; }
+
+    try {
+      const response = await fetch(`http://localhost:5000/produtos/buscar?nome=${encodeURIComponent(termo)}`);
+      if (response.ok) {
+        const dados = await response.json();
+        setResultadosBusca(dados);
+        setMostrandoResultados(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar:', error);
     }
   };
 
@@ -404,7 +427,15 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
   };
 
   // Calcula total do pedido com taxa de entrega
-  const calcularTotalComTaxa = (pedido) => (pedido.total || 0) + (pedido.taxa_entrega || pedido.pagamento?.taxa_entrega || 0);
+  const calcularTotalComTaxa = (pedido) => {
+    const subtotalItens = (pedido.itens || []).reduce((acc, item) => {
+      return acc + ((item.preco_unitario || 0) * (item.quantidade || 0));
+    }, 0);
+    
+    const taxaEntrega = pedido.taxa_entrega || pedido.pagamento?.taxa_entrega || pedido.detalhes_entrega?.taxa_entrega || 0;
+    
+    return subtotalItens + taxaEntrega;
+  };
 
   // FUNÇÕES - RETIRADA
 
@@ -562,14 +593,58 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
               <a href="#" style={{ textDecoration: "none", color: "#ff3b3b" }}> Sorvetes </a>
             </nav>
 
-            <div style={{ display: "flex", alignItems: "center", backgroundColor: "white", padding: "10px 20px", borderRadius: "30px", width: "350px", boxShadow: "0 2px 5px rgba(0,0,0,0.05)", }}>
+            <div style={{ display: "flex", alignItems: "center", backgroundColor: "white", padding: "10px 20px", borderRadius: "30px", width: "350px", boxShadow: "0 2px 5px rgba(0,0,0,0.05)", position: 'relative'  }}>
               <span style={{ color: "#ff3b3b", marginRight: "10px" }}>🔍</span>
-              <input type="text" placeholder="Qual docinho você quer hoje ?" style={{ border: "none", outline: "none", width: "100%", fontSize: "1rem", color: "#555", }} />
+              <input 
+                type="text" 
+                placeholder="Qual docinho você quer hoje?" 
+                value={termoBusca}
+                onChange={(e) => { setTermoBusca(e.target.value); buscarProdutos(e.target.value); }}
+                style={{ border: "none", outline: "none", width: "100%", fontSize: "1rem", color: "#555" }} />
+              
+              {mostrandoResultados && resultadosBusca.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'white', borderRadius: '15px', boxShadow: '0 5px 15px rgba(0,0,0,0.1)', marginTop: '8px', maxHeight: '300px', overflowY: 'auto', zIndex: 1000 }}>
+                  {resultadosBusca.map(produto => (
+                    <div 
+                      key={produto.id}
+                      onClick={() => {
+                        setMostrandoResultados(false);
+                        setTermoBusca('');
+                        setProdutoSelecionado(produto);
+                        setQuantidadeProduto(1);
+                      }}
+                      style={{ padding: '12px 20px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', color: '#333', display: 'flex', alignItems: 'center', gap: '10px', transition: 'background-color 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff5f5'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                    >
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#f0f0f0', overflow: 'hidden', flexShrink: 0 }}>
+                        {produto.imagem ? (
+                          <img src={produto.imagem} alt={produto.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}> 🍬 </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', color: '#333' }}>
+                          {produto.nome}
+                        </div>
+                        {produto.preco && (
+                          <div style={{ fontSize: '0.85rem', color: '#ff3b3b', fontWeight: 'bold' }}>
+                            R$ {Number(produto.preco).toFixed(2).replace('.', ',')}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ color: '#ccc' }}>→</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
               {/* === BOTÃO DE ENDEREÇOS === */}
-              <span onClick={() => { setModalEnderecoAberto(true); setPassoEndereco(1); }} style={{ cursor: "pointer", color: "#ff3b3b", fontWeight: "600", fontSize: "1.1rem", }}> Endereços </span>
+              <span onClick={() => setModalEnderecosAberto(true)} style={{ cursor: "pointer", color: "#ff3b3b", fontWeight: "600", fontSize: "1.1rem", }}> Endereços </span>
 
               {/* === CONTAINER DO POP-UP DO USUÁRIO === */}
               <div style={{ position: "relative" }}>
@@ -586,9 +661,10 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
                     <div className="popup-opcoes">
                       <button className="btn-opcao" onClick={() => { setTelaAtual("pedidos"); setMenuUsuarioAberto(false); }}> <span className="icone">🧾</span> Pedidos </button>
                       <button className="btn-opcao" onClick={() => { setModalPerfilAberto(true); setMenuUsuarioAberto(false); }}> <span className="icone">👤</span> Meus dados </button>
+                      <button className="btn-opcao"  onClick={() => { setModalEnderecoAberto(true); setPassoEndereco(1); }}> <span className="icone" >📍</span> Novo Endereço </button>
                       <button className="btn-opcao" onClick={() => { setTelaAtual("cadastro"); setMenuUsuarioAberto(false); }}> <span className="icone">📝</span> Cadastrar </button>
                       <button className="btn-opcao" onClick={() => { setModalRelatorioAberto(true); setMenuUsuarioAberto(false); }}> <span className="icone">📊</span> Relatório </button>
-                      <button className="btn-opcao"> <span className="icone">❓</span> Ajuda </button>
+                      <button className="btn-opcao" onClick={() => setModalAjudaAberto(true)}> <span className="icone">❓</span> Ajuda </button>
                       <button className="btn-opcao" onClick={() => { setTelaAtual("home"); setMenuUsuarioAberto(false); }}> <span className="icone">⬅️</span> Sair </button>
                     </div>
                   </div>
@@ -1553,6 +1629,16 @@ function AreaLogada({ telaAtual, setTelaAtual, menuUsuarioAberto, setMenuUsuario
           </div>
         </div>
       )}
+
+      <ModalAjuda 
+        isOpen={modalAjudaAberto}
+        onClose={() => setModalAjudaAberto(false)}
+      />
+
+      <ModalEnderecos 
+        isOpen={modalEnderecosAberto}
+        onClose={() => setModalEnderecosAberto(false)}
+      />
 
       <ToastContainer />
     </>
